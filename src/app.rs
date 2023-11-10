@@ -189,9 +189,9 @@ impl eframe::App for App {
             hook_manifest.df == self.df_checksum,
             hook_manifest.version == self.hook_checksum,
           ) {
-            (true, true) => "✅ up to date",
+            (true, true) => "✅ up-to-date",
             (true, false) => "⚠ update available",
-            (false, _) => "✖ DF version not supported",
+            (false, _) => "✖ this DF version is not supported",
           },
         );
         ui.end_row();
@@ -234,7 +234,7 @@ impl eframe::App for App {
               dict_manifest.version == self.dict_checksum,
               self.selected_language == "None",
             ) {
-              (true, false) => "✅ up to date",
+              (true, false) => "✅ up-to-date",
               (false, false) => "⚠ update available",
               (_, true) => "⚠ choose language",
             },
@@ -291,7 +291,7 @@ impl Logic for App {
       .resizable(false)
       .show_rename(false)
       .show_new_folder(false)
-      .title("open Dwarf Fortress executable")
+      .title("Open Dwarf Fortress executable")
       .default_size([700., 381.]);
     dialog.set_path(df_dir.unwrap_or(std::env::current_dir().unwrap()));
     dialog.open();
@@ -334,7 +334,7 @@ impl Logic for App {
               write!(hook_manifest, manifest);
             } else {
               if df_checksum != 0 {
-                error!("DF version not supported");
+                error!("This DF version is not supported");
               }
             }
           }
@@ -416,7 +416,7 @@ impl Logic for App {
         modal.frame(ui, |ui| {
           modal.body_and_icon(
             ui,
-            "Dwarf Fortress is running, close it before using the installer.",
+            "Dwarf Fortress is running. Close it before using the installer.",
             egui_modal::Icon::Info,
           );
         });
@@ -448,7 +448,7 @@ impl Logic for App {
       modal.frame(ui, |ui| {
         modal.body_and_icon(
           ui,
-          "Old version of translation stuff detected. It's better to delete it to avoid conflicts. Delete?",
+          "Old version of translation files has been detected. It's better to delete them to avoid conflicts. Delete?",
           egui_modal::Icon::Info,
         );
       });
@@ -461,7 +461,7 @@ impl Logic for App {
           self.delete_old_data_show = false;
           let _ = remove_old_data(&self.df_dir);
           modal.close();
-          self.toast.success("Old data was deleted");
+          self.toast.success("Old files successfully deleted");
         };
       });
     });
