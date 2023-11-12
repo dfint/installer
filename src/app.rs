@@ -18,27 +18,26 @@ pub(crate) use spawn;
 
 macro_rules! error {
   ($l:expr) => {
-    write!(notify, (Notification::Error, $l.into()))
+    write!(notify, (Notification::Error, $l))
   };
 }
 macro_rules! _info {
   ($l:expr) => {
-    write!(notify, (Notification::Info, $l.into()))
+    write!(notify, (Notification::Info, $l))
   };
 }
 macro_rules! _warning {
   ($l:expr) => {
-    write!(notify, (Notification::warning, $l.into()))
+    write!(notify, (Notification::warning, $l))
   };
 }
 macro_rules! success {
   ($l:expr) => {
-    write!(notify, (Notification::Success, $l.into()))
+    write!(notify, (Notification::Success, $l))
   };
 }
 
 pub struct App {
-  // internal
   toast: egui_notify::Toasts,
   open_file_dialog: Option<egui_file::FileDialog>,
   opened_file: Option<PathBuf>,
@@ -46,10 +45,9 @@ pub struct App {
   on_start: bool,
   df_running: bool,
   selected_language: String,
-  // data
   df_os: OS,
-  df_bin: Option<PathBuf>,
   df_dir: Option<PathBuf>,
+  df_bin: Option<PathBuf>,
   df_checksum: u32,
   hook_checksum: u32,
   dict_checksum: u32,
@@ -57,24 +55,14 @@ pub struct App {
 
 impl Default for App {
   fn default() -> Self {
-    let df_bin: Option<PathBuf>;
-    let selected_language: String;
-
-    match persistent::load() {
+    let (df_bin, selected_language) = match persistent::load() {
       Ok(store) => {
-        df_bin = Some(PathBuf::from(store.df_bin));
-        selected_language = store.selected_language;
         write!(hook_manifest, store.hook_manifest);
         write!(dict_manifest, store.dict_manifest);
+        (Some(PathBuf::from(store.df_bin)), store.selected_language)
       }
-      Err(_) => {
-        df_bin = scan_df();
-        selected_language = String::from("None");
-      }
+      Err(_) => (scan_df(), String::from("None")),
     };
-
-    let df_dir = df_dir_by_bin(&df_bin);
-    let df_os = df_os_by_bin(&df_bin);
 
     Self {
       toast: egui_notify::Toasts::default().with_anchor(egui_notify::Anchor::BottomRight),
@@ -84,10 +72,9 @@ impl Default for App {
       on_start: true,
       df_running: is_df_running(),
       selected_language,
-
-      df_os,
+      df_os: df_os_by_bin(&df_bin),
+      df_dir: df_dir_by_bin(&df_bin),
       df_bin,
-      df_dir,
       df_checksum: 0,
       hook_checksum: 0,
       dict_checksum: 0,
@@ -130,14 +117,13 @@ impl eframe::App for App {
     }
 
     // UI block
-
     // status bar
     egui::TopBottomPanel::bottom("status").show(ctx, |ui| {
       ui.horizontal_centered(|ui| {
         ui.add(egui::Image::new(BOOSTY_ICON.to_owned()).max_height(15.).max_width(15.));
-        ui.hyperlink_to("support", "https://boosty.to/dfrus");
+        ui.hyperlink_to("support", URL_BOOSTY);
         ui.add(egui::Image::new(GITHUB_ICON.to_owned()).max_height(15.).max_width(15.));
-        ui.hyperlink_to("report bug", "https://github.com/dfint");
+        ui.hyperlink_to("report bug", URL_BUGS);
       })
     });
 
@@ -204,9 +190,10 @@ impl eframe::App for App {
       egui::Grid::new("dictionary grid").num_columns(4).min_col_width(150.).spacing([5., 5.]).striped(true).show(
         ui,
         |ui| {
-          egui::ComboBox::from_id_source("langs").selected_text(self.selected_language.clone()).width(140.).show_ui(
-            ui,
-            |ui| {
+          egui::ComboBox::from_id_source("languages")
+            .selected_text(self.selected_language.clone())
+            .width(140.)
+            .show_ui(ui, |ui| {
               let manifests = read!(vec_dict_manifests).clone();
               for item in manifests.iter() {
                 if ui
@@ -218,14 +205,12 @@ impl eframe::App for App {
                   .clicked()
                 {
                   if self.selected_language != "None" {
-                    let lang = self.selected_language.clone();
-                    let manifest = get_manifest_by_language(lang.clone(), manifests.clone());
+                    let manifest = get_manifest_by_language(self.selected_language.clone(), manifests.clone());
                     write!(dict_manifest, manifest.unwrap());
                   }
                 };
               }
-            },
-          );
+            });
           let dict_manifest = read!(dict_manifest).clone();
           ui.label(self.dict_checksum.to_string());
           ui.label(dict_manifest.version.to_string());
@@ -459,7 +444,7 @@ impl Logic for App {
         };
         if modal.suggested_button(ui, "Yes").clicked() {
           self.delete_old_data_show = false;
-          let _ = remove_old_data(&self.df_dir);
+          remove_old_data(&self.df_dir);
           modal.close();
           self.toast.success("Old files successfully deleted");
         };

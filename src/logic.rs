@@ -95,19 +95,12 @@ pub fn scan_df() -> Option<PathBuf> {
     PathBuf::from("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Dwarf Fortress\\Dwarf Fortress.exe"),
     PathBuf::from("~/.local/share/Steam/steamapps/common/Dwarf Fortress/dwarfort"),
   ];
-
-  for path in pathes {
-    if path.exists() {
-      return Some(path);
-    }
-  }
-  None
+  pathes.iter().find(|path| path.exists()).cloned()
 }
 
 pub fn create_dir_if_not_exist(df_dir: &Option<PathBuf>) -> Result<()> {
-  match df_dir {
-    Some(pathbuf) => std::fs::create_dir_all(pathbuf.join(PATH_DATA))?,
-    None => (),
+  if let Some(pathbuf) = df_dir {
+    std::fs::create_dir_all(pathbuf.join(PATH_DATA))?;
   }
   Ok(())
 }
@@ -185,16 +178,11 @@ pub struct HookManifest {
 
 pub fn fetch_hook_manifest() -> Result<Vec<HookManifest>> {
   let manifests: Vec<HookManifest> = ureq::get(URL_HOOK_MANIFEST).call()?.into_json()?;
-  return Ok(manifests);
+  Ok(manifests)
 }
 
 pub fn get_manifest_by_df(df_checksum: u32, manifests: Vec<HookManifest>) -> Option<HookManifest> {
-  for manifest in manifests.iter() {
-    if manifest.df == df_checksum {
-      return Some(manifest.to_owned());
-    }
-  }
-  None
+  manifests.iter().find(|item| item.df == df_checksum).cloned()
 }
 
 #[allow(dead_code)]
@@ -213,12 +201,7 @@ pub fn fetch_dict_manifest() -> Result<Vec<DictManifest>> {
 }
 
 pub fn get_manifest_by_language(language: String, manifests: Vec<DictManifest>) -> Option<DictManifest> {
-  for manifest in manifests.iter() {
-    if manifest.language == language {
-      return Some(manifest.to_owned());
-    }
-  }
-  None
+  manifests.iter().find(|item| item.language == language).cloned()
 }
 
 pub fn download_to_file(url: &str, file: &PathBuf) -> Result<()> {
@@ -228,13 +211,9 @@ pub fn download_to_file(url: &str, file: &PathBuf) -> Result<()> {
   Ok(())
 }
 
-pub fn remove_old_data(df_dir: &Option<PathBuf>) -> Result<()> {
-  match df_dir {
-    Some(pathbuf) => {
-      let _ = std::fs::remove_file(pathbuf.join("dfint_launcher.exe"));
-      let _ = std::fs::remove_dir_all(pathbuf.join("dfint_data"));
-      Ok(())
-    }
-    None => Ok(()),
+pub fn remove_old_data(df_dir: &Option<PathBuf>) {
+  if let Some(pathbuf) = df_dir {
+    let _ = std::fs::remove_file(pathbuf.join("dfint_launcher.exe"));
+    let _ = std::fs::remove_dir_all(pathbuf.join("dfint_data"));
   }
 }
