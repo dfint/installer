@@ -84,14 +84,16 @@ impl Default for App {
 
 impl eframe::App for App {
   fn on_close_event(&mut self) -> bool {
-    let _ = persistent::save(persistent::Store {
-      df_bin: self.df_bin.clone().unwrap().as_path().display().to_string(),
-      hook_manifest: read!(hook_manifest).clone(),
-      vec_hook_manifests: read!(vec_hook_manifests).clone(),
-      dict_manifest: read!(dict_manifest).clone(),
-      vec_dict_manifests: read!(vec_dict_manifests).clone(),
-      selected_language: self.selected_language.clone(),
-    });
+    if self.df_bin.is_some() {
+      let _ = persistent::save(persistent::Store {
+        df_bin: self.df_bin.clone().unwrap().as_path().display().to_string(),
+        hook_manifest: read!(hook_manifest).clone(),
+        vec_hook_manifests: read!(vec_hook_manifests).clone(),
+        dict_manifest: read!(dict_manifest).clone(),
+        vec_dict_manifests: read!(vec_dict_manifests).clone(),
+        selected_language: self.selected_language.clone(),
+      });
+    }
     true
   }
 
@@ -110,7 +112,7 @@ impl eframe::App for App {
     // pending checksums update
     self.recalculate_checksum();
     // if file dialog opened
-    self.opened_file_dialog(ctx);
+    self.opened_file_dialog(ctx, frame);
     // if delete old data dialog opened
     if self.delete_old_data_show {
       self.delete_old_hook_dialog(ctx)
@@ -259,7 +261,7 @@ impl eframe::App for App {
 
 trait Logic {
   fn file_dialog(&self, df_dir: Option<PathBuf>) -> Option<egui_file::FileDialog>;
-  fn opened_file_dialog(&mut self, ctx: &egui::Context);
+  fn opened_file_dialog(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame);
   fn on_start(&mut self, ctx: &egui::Context);
   fn notify(&mut self);
   fn recalculate_checksum(&mut self);
@@ -283,8 +285,11 @@ impl Logic for App {
     Some(dialog)
   }
 
-  fn opened_file_dialog(&mut self, ctx: &egui::Context) {
+  fn opened_file_dialog(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
     if let Some(dialog) = &mut self.open_file_dialog {
+      if dialog.state() == egui_file::State::Closed && self.df_os == OS::None {
+        frame.close();
+      }
       if dialog.show(ctx).selected() {
         if let Some(file) = dialog.path() {
           self.df_bin = Some(file.to_path_buf());
