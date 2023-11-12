@@ -21,7 +21,7 @@ fn main() -> Result<(), eframe::Error> {
     ..Default::default()
   };
   eframe::run_native(
-    "dfint installer",
+    "DF localization installer",
     options,
     Box::new(|cc| {
       egui_extras::install_image_loaders(&cc.egui_ctx);

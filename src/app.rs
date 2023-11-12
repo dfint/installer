@@ -164,7 +164,7 @@ impl eframe::App for App {
         return;
       }
 
-      ui.heading("Hook");
+      ui.heading(t!("Hook"));
       ui.separator();
 
       egui::Grid::new("hook grid").num_columns(4).min_col_width(150.).spacing([5., 5.]).striped(true).show(ui, |ui| {
@@ -186,7 +186,7 @@ impl eframe::App for App {
       });
       ui.add_space(20.);
 
-      ui.heading("Dictionary");
+      ui.heading(t!("Dictionary"));
       ui.separator();
 
       egui::Grid::new("dictionary grid").num_columns(4).min_col_width(150.).spacing([5., 5.]).striped(true).show(
@@ -246,7 +246,7 @@ impl eframe::App for App {
           if loading > 0 {
             ui.add(egui::Spinner::new().size(40.));
           } else {
-            let button = ui.add_sized([120., 40.], egui::Button::new("Update"));
+            let button = ui.add_sized([120., 40.], egui::Button::new(t!("Update")));
             if button.clicked() {
               self.update_data();
             }
