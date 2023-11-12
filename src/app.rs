@@ -2,7 +2,7 @@ use eframe::egui;
 use std::path::PathBuf;
 
 use crate::constants::*;
-// use crate::localization::{t, LOCALE};
+use crate::localization::{t, LOCALE};
 use crate::logic::*;
 use crate::persistent;
 use crate::state::{read, write, STATE};
@@ -123,9 +123,9 @@ impl eframe::App for App {
     egui::TopBottomPanel::bottom("status").show(ctx, |ui| {
       ui.horizontal_centered(|ui| {
         ui.add(egui::Image::new(BOOSTY_ICON.to_owned()).max_height(15.).max_width(15.));
-        ui.hyperlink_to("support", URL_BOOSTY);
+        ui.hyperlink_to(t!("support"), URL_BOOSTY);
         ui.add(egui::Image::new(GITHUB_ICON.to_owned()).max_height(15.).max_width(15.));
-        ui.hyperlink_to("report bug", URL_BUGS);
+        ui.hyperlink_to(t!("report bug"), URL_BUGS);
       })
     });
 
@@ -140,7 +140,7 @@ impl eframe::App for App {
         .spacing([5., 5.])
         .striped(true)
         .show(ui, |ui| {
-          ui.label("Path");
+          ui.label(t!("Path"));
           ui.label(match self.df_bin.clone() {
             Some(pathbuf) => pathbuf.as_path().display().to_string(),
             None => "None".to_owned(),
@@ -150,10 +150,10 @@ impl eframe::App for App {
             self.open_file_dialog = self.file_dialog(dir);
           };
           ui.end_row();
-          ui.label("OS");
+          ui.label(t!("OS"));
           ui.label(format!("{}", self.df_os));
           ui.end_row();
-          ui.label("Checksum");
+          ui.label(t!("Checksum"));
           ui.label(format!("{:x}", self.df_checksum));
           ui.end_row();
         });
@@ -169,7 +169,7 @@ impl eframe::App for App {
 
       egui::Grid::new("hook grid").num_columns(4).min_col_width(150.).spacing([5., 5.]).striped(true).show(ui, |ui| {
         let hook_manifest = read!(hook_manifest).clone();
-        ui.label("Version");
+        ui.label(t!("Version"));
         ui.label(self.hook_checksum.to_string());
         ui.label(hook_manifest.version.to_string());
         ui.label(
@@ -177,9 +177,9 @@ impl eframe::App for App {
             hook_manifest.df == self.df_checksum,
             hook_manifest.version == self.hook_checksum,
           ) {
-            (true, true) => "✅ up-to-date",
-            (true, false) => "⚠ update available",
-            (false, _) => "✖ this DF version is not supported",
+            (true, true) => t!("✅ up-to-date"),
+            (true, false) => t!("⚠ update available"),
+            (false, _) => t!("✖ this DF version is not supported"),
           },
         );
         ui.end_row();
@@ -221,9 +221,9 @@ impl eframe::App for App {
               dict_manifest.version == self.dict_checksum,
               self.selected_language == "None",
             ) {
-              (true, false) => "✅ up-to-date",
-              (false, false) => "⚠ update available",
-              (_, true) => "⚠ choose language",
+              (true, false) => t!("✅ up-to-date"),
+              (false, false) => t!("⚠ update available"),
+              (_, true) => t!("⚠ choose language"),
             },
           );
           ui.end_row();
@@ -278,7 +278,7 @@ impl Logic for App {
       .resizable(false)
       .show_rename(false)
       .show_new_folder(false)
-      .title("Open Dwarf Fortress executable")
+      .title(&t!("Open Dwarf Fortress executable"))
       .default_size([700., 381.]);
     dialog.set_path(df_dir.unwrap_or(std::env::current_dir().unwrap()));
     dialog.open();
@@ -324,12 +324,12 @@ impl Logic for App {
               write!(hook_manifest, manifest);
             } else {
               if df_checksum != 0 {
-                error!("This DF version is not supported");
+                error!(t!("This DF version is not supported"));
               }
             }
           }
           Err(_) => {
-            error!("Unable to fetch hook metadata...");
+            error!(t!("Unable to fetch hook metadata..."));
           }
         }
       });
@@ -346,7 +346,7 @@ impl Logic for App {
             }
           }
           Err(_) => {
-            error!("Unable to fetch dictionary metadata...");
+            error!(t!("Unable to fetch dictionary metadata..."));
           }
         }
       });
@@ -364,7 +364,7 @@ impl Logic for App {
   }
 
   fn notify(&mut self) {
-    let (level, message) = read!(notify);
+    let (level, message) = read!(notify).clone();
     if level != Notification::None {
       match level {
         Notification::Error => {
@@ -381,7 +381,7 @@ impl Logic for App {
         }
         Notification::None => (),
       }
-      write!(notify, (Notification::None, ""));
+      write!(notify, (Notification::None, "".into()));
     }
   }
 
@@ -402,11 +402,11 @@ impl Logic for App {
     egui::CentralPanel::default().show(ctx, |_ui| {
       let modal = egui_modal::Modal::new(ctx, "df_is_running");
       modal.show(|ui| {
-        modal.title(ui, "Warning");
+        modal.title(ui, t!("Warning"));
         modal.frame(ui, |ui| {
           modal.body_and_icon(
             ui,
-            "Dwarf Fortress is running. Close it before using the installer.",
+            t!("Dwarf Fortress is running. Close it before using the installer."),
             egui_modal::Icon::Info,
           );
         });
@@ -434,24 +434,24 @@ impl Logic for App {
   fn delete_old_hook_dialog(&mut self, ctx: &egui::Context) {
     let modal = egui_modal::Modal::new(ctx, "delete_old_data");
     modal.show(|ui| {
-      modal.title(ui, "Warning");
+      modal.title(ui, t!("Warning"));
       modal.frame(ui, |ui| {
         modal.body_and_icon(
           ui,
-          "Old version of translation files has been detected. It's better to delete them to avoid conflicts. Delete?",
+          t!("Old version of translation files has been detected. It's better to delete them to avoid conflicts. Delete?"),
           egui_modal::Icon::Info,
         );
       });
       modal.buttons(ui, |ui| {
-        if modal.button(ui, "No").clicked() {
+        if modal.button(ui, t!("No")).clicked() {
           self.delete_old_data_show = false;
           modal.close();
         };
-        if modal.suggested_button(ui, "Yes").clicked() {
+        if modal.suggested_button(ui, t!("Yes")).clicked() {
           self.delete_old_data_show = false;
           remove_old_data(&self.df_dir);
           modal.close();
-          self.toast.success("Old files successfully deleted");
+          self.toast.success(t!("Old files successfully deleted"));
         };
       });
     });
@@ -474,9 +474,9 @@ impl Logic for App {
         let loading = read!(loading);
         if r1.is_ok() && r2.is_ok() && r3.is_ok() {
           write!(recalculate_hook_checksum, true);
-          success!("Hook updated");
+          success!(t!("Hook updated"));
         } else {
-          error!("Unable to update hook");
+          error!(t!("Unable to update hook"));
         }
         write!(loading, loading - 1);
       });
@@ -494,9 +494,9 @@ impl Logic for App {
         let loading = read!(loading);
         if r1.is_ok() && r2.is_ok() && r3.is_ok() {
           write!(recalculate_dict_checksum, true);
-          success!("Dictionary updated");
+          success!(t!("Dictionary updated"));
         } else {
-          error!("Unable to update dictionary");
+          error!(t!("Unable to update dictionary"));
         }
         write!(loading, loading - 1);
       });

@@ -18,8 +18,8 @@ impl Localization {
   fn new() -> Self {
     let current_locale = sys_locale::get_locale().unwrap_or("en-US".to_owned());
     let translations = HashMap::<String, &'static str>::from([
-      ("ru-RU".to_owned(), std::include_str!("../locale/ru-RU.json")),
       ("en-US".to_owned(), std::include_str!("../locale/en-US.json")),
+      ("ru-RU".to_owned(), std::include_str!("../locale/ru-RU.json")),
     ]);
 
     let translation: HashMap<String, String> = match translations.get(&current_locale) {
