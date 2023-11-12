@@ -17,5 +17,5 @@ pub const PATH_DATA: &'static str = "dfint-data";
 pub const PATH_CONFIG: &'static str = "dfint-data/config.toml";
 pub const PATH_OFFSETS: &'static str = "dfint-data/offsets.toml";
 pub const PATH_DICT: &'static str = "dfint-data/dictionary.csv";
-pub const PATH_FONT: &'static str = "dfint-data/curses.png";
+pub const PATH_FONT: &'static str = "data/art/curses_640x300.png";
 pub const PATH_ENCODING: &'static str = "dfint-data/encoding.toml";
