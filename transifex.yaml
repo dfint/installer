@@ -6,5 +6,5 @@ git:
     source_language: en
     translation_files_expression: 'locale/<lang>/application.json'
 
-settings:
-  pr_branch_name: translation_update_<br_unique_id>
+# settings:
+#   pr_branch_name: translation_update_<br_unique_id>
