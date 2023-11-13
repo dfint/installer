@@ -7,9 +7,9 @@ pub const APP_ICON: &'static [u8; 1980] = include_bytes!("../assets/df.png");
 pub const PATH_CACHE_FILE: &'static str = "./dfint-installer.cache";
 
 pub const URL_HOOK_MANIFEST: &'static str =
-  "https://raw.githubusercontent.com/dfint/update-meta/main/metadata/hook.json";
+  "https://raw.githubusercontent.com/dfint/update-data/main/metadata/hook.json";
 pub const URL_DICT_MANIFEST: &'static str =
-  "https://raw.githubusercontent.com/dfint/update-meta/main/metadata/dict.json";
+  "https://raw.githubusercontent.com/dfint/update-data/main/metadata/dict.json";
 pub const URL_BOOSTY: &'static str = "https://boosty.to/dfrus";
 pub const URL_BUGS: &'static str = "https://github.com/dfint/installer/issues";
 
