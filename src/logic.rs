@@ -36,7 +36,7 @@ impl App {
       .show_rename(false)
       .show_new_folder(false)
       .title(&t!("Open Dwarf Fortress executable"))
-      .default_size([700., 381.]);
+      .default_size([720., 381.]);
     dialog.set_path(df_dir.unwrap_or(std::env::current_dir().unwrap()));
     dialog.open();
     Some(dialog)

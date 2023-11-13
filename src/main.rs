@@ -16,7 +16,7 @@ mod utils;
 fn main() -> Result<(), eframe::Error> {
   env_logger::init();
   let options = eframe::NativeOptions {
-    initial_window_size: Some(egui::vec2(700., 450.)),
+    initial_window_size: Some(egui::vec2(720., 450.)),
     resizable: false,
     icon_data: Some(IconData::try_from_png_bytes(APP_ICON).unwrap()),
     ..Default::default()

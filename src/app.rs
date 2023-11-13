@@ -149,9 +149,9 @@ impl eframe::App for App {
             hook_manifest.df == self.df_checksum,
             hook_manifest.version == self.hook_checksum,
           ) {
-            (true, true) => t!("✅ up-to-date"),
-            (true, false) => t!("⚠ update available"),
-            (false, _) => t!("✖ this DF version is not supported"),
+            (true, true) => format!("✅ {}", t!("up-to-date")),
+            (true, false) => format!("⚠ {}", t!("update available")),
+            (false, _) => format!("✖ {}", t!("this DF version is not supported")),
           },
         );
         ui.end_row();
@@ -193,9 +193,9 @@ impl eframe::App for App {
               dict_manifest.version == self.dict_checksum,
               self.selected_language == "None",
             ) {
-              (true, false) => t!("✅ up-to-date"),
-              (false, false) => t!("⚠ update available"),
-              (_, true) => t!("⚠ choose language"),
+              (true, false) => format!("✅ {}", t!("up-to-date")),
+              (false, false) => format!("⚠ {}", t!("update available")),
+              (_, true) => format!("⚠ {}", t!("choose language")),
             },
           );
           ui.end_row();
