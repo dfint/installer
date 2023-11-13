@@ -1,219 +1,317 @@
-use core::fmt;
-use std::ffi::OsStr;
-use std::path::{Path, PathBuf};
+use anyhow::Result;
+use eframe::egui;
+use std::path::PathBuf;
 
-use anyhow::{anyhow, Result};
-use exe::{VecPE, PE};
-use sysinfo::{System, SystemExt};
+use crate::{
+  app::App,
+  constants::*,
+  localization::{t, LOCALE},
+  state::{read, write, STATE},
+  utils::*,
+};
 
-use crate::constants::*;
-
-#[allow(dead_code)]
-#[derive(Copy, Clone, PartialEq, Eq)]
-pub enum Notification {
-  None,
-  Error,
-  Warning,
-  Info,
-  Success,
+macro_rules! spawn {
+  ($l:expr) => {
+    std::thread::spawn(move || {
+      $l;
+    });
+  };
+}
+macro_rules! error {
+  ($l:expr) => {
+    write!(notify, (Notification::Error, $l))
+  };
+}
+macro_rules! success {
+  ($l:expr) => {
+    write!(notify, (Notification::Success, $l))
+  };
 }
 
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum OS {
-  None = -1,
-  Linux = 0,
-  Windows = 1,
-}
-
-impl fmt::Display for OS {
-  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    match self {
-      OS::None => std::write!(f, "None"),
-      OS::Linux => std::write!(f, "Linux"),
-      OS::Windows => std::write!(f, "Windows"),
-    }
+impl App {
+  pub fn file_dialog(&self, df_dir: Option<PathBuf>) -> Option<egui_file::FileDialog> {
+    let mut dialog = egui_file::FileDialog::open_file(self.opened_file.clone())
+      .filter(Box::new(|path| is_df_bin(path)))
+      .resizable(false)
+      .show_rename(false)
+      .show_new_folder(false)
+      .title(&t!("Open Dwarf Fortress executable"))
+      .default_size([700., 381.]);
+    dialog.set_path(df_dir.unwrap_or(std::env::current_dir().unwrap()));
+    dialog.open();
+    Some(dialog)
   }
-}
 
-pub fn df_checksum(path: &Option<PathBuf>, os: OS) -> Result<u32> {
-  match (path, os) {
-    (Some(pathbuf), OS::Windows) => {
-      let pefile = VecPE::from_disk_file(pathbuf)?;
-      Ok(pefile.get_nt_headers_64()?.file_header.time_date_stamp)
-    }
-    (Some(pathbuf), OS::Linux) => Ok(crc(pathbuf)?),
-    _ => Err(anyhow!("Unknown os").into()),
-  }
-}
-
-pub fn crc(path: &PathBuf) -> Result<u32> {
-  let content = std::fs::read(path)?;
-  Ok(crc32fast::hash(&content))
-}
-
-pub fn checksum_for_files(vec: Vec<Option<PathBuf>>) -> Result<u32> {
-  let mut data: Vec<u8> = vec![];
-  for file in vec {
-    match file {
-      Some(f) => match std::fs::read(f) {
-        Ok(mut c) => data.append(&mut c),
-        Err(_) => data.push(0),
-      },
-      None => data.push(0),
-    }
-  }
-  Ok(crc32fast::hash(&data))
-}
-
-pub fn local_hook_checksum(df_bin: &Option<PathBuf>, df_dir: &Option<PathBuf>) -> Result<u32> {
-  match df_dir {
-    Some(pathbuf) => checksum_for_files(vec![
-      df_bin.clone(),
-      Some(pathbuf.join(PATH_CONFIG)),
-      Some(pathbuf.join(PATH_OFFSETS)),
-    ]),
-    None => Ok(0),
-  }
-}
-
-pub fn local_dict_checksum(df_dir: &Option<PathBuf>) -> Result<u32> {
-  match df_dir {
-    Some(pathbuf) => checksum_for_files(vec![
-      Some(pathbuf.join(PATH_DICT)),
-      Some(pathbuf.join(PATH_FONT)),
-      Some(pathbuf.join(PATH_ENCODING)),
-    ]),
-    None => Ok(0),
-  }
-}
-
-pub fn scan_df() -> Option<PathBuf> {
-  let current = std::env::current_dir().unwrap();
-  let pathes = vec![
-    current.join("Dwarf Fortress.exe"),
-    current.join("dwarfort"),
-    PathBuf::from("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Dwarf Fortress\\Dwarf Fortress.exe"),
-    PathBuf::from("~/.local/share/Steam/steamapps/common/Dwarf Fortress/dwarfort"),
-  ];
-  pathes.iter().find(|path| path.exists()).cloned()
-}
-
-pub fn create_dir_if_not_exist(df_dir: &Option<PathBuf>) -> Result<()> {
-  if let Some(pathbuf) = df_dir {
-    std::fs::create_dir_all(pathbuf.join(PATH_DATA))?;
-  }
-  Ok(())
-}
-
-pub fn df_dir_by_bin(path: &Option<PathBuf>) -> Option<PathBuf> {
-  match path {
-    Some(pathbuf) => match pathbuf.as_path().parent() {
-      Some(parent) => Some(parent.to_path_buf()),
-      _ => None,
-    },
-    _ => None,
-  }
-}
-
-pub fn df_os_by_bin(path: &Option<PathBuf>) -> OS {
-  match path {
-    Some(pathbuf) => {
-      let p = pathbuf.as_path();
-      if p.exists() && p.file_name() == Some(OsStr::new("Dwarf Fortress.exe")) {
-        OS::Windows
-      } else if p.exists() && p.file_name() == Some(OsStr::new("dwarfort")) {
-        OS::Linux
-      } else {
-        OS::None
+  pub fn opened_file_dialog(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+    if let Some(dialog) = &mut self.open_file_dialog {
+      if dialog.state() == egui_file::State::Closed && self.df_os == OS::None {
+        frame.close();
+      }
+      if dialog.show(ctx).selected() {
+        if let Some(file) = dialog.path() {
+          self.df_bin = Some(file.to_path_buf());
+          self.df_os = df_os_by_bin(&self.df_bin);
+          self.df_dir = Some(file.parent().unwrap().to_path_buf());
+          self.df_checksum = df_checksum(&self.df_bin, self.df_os).unwrap_or(0);
+          self.hook_checksum = self.local_hook_checksum().unwrap_or(0);
+          self.dict_checksum = self.local_dict_checksum().unwrap_or(0);
+          let manifests = read!(vec_hook_manifests).clone();
+          if let Some(manifest) = get_manifest_by_df(self.df_checksum, manifests) {
+            write!(hook_manifest, manifest);
+          }
+          self.delete_old_data_check();
+        }
       }
     }
-    _ => OS::None,
   }
-}
 
-pub fn is_df_bin(path: &Path) -> bool {
-  path.exists() && (path.file_name() == Some(OsStr::new("Dwarf Fortress.exe")))
-    || path.file_name() == Some(OsStr::new("dwarfort"))
-}
+  pub fn on_start(&mut self, ctx: &egui::Context) {
+    if self.on_start {
+      self.on_start = false;
 
-pub fn is_dfhack_installed(df_dir: &Option<PathBuf>) -> bool {
-  match df_dir {
-    Some(path) => {
-      (path.join("dfhooks.dll").exists() || path.join("libdfhooks.so").exists()) && path.join("hack/plugins").exists()
+      let df_checksum = df_checksum(&self.df_bin, self.df_os).unwrap_or(0);
+      self.df_checksum = df_checksum;
+      self.hook_checksum = self.local_hook_checksum().unwrap_or(0);
+
+      spawn!({
+        match fetch_manifest::<HookManifest>(URL_HOOK_MANIFEST) {
+          Ok(manifests) => {
+            write!(vec_hook_manifests, manifests.clone());
+            if let Some(manifest) = get_manifest_by_df(df_checksum, manifests) {
+              write!(hook_manifest, manifest);
+            } else {
+              if df_checksum != 0 {
+                error!(t!("This DF version is not supported"));
+              }
+            }
+          }
+          Err(_) => {
+            error!(t!("Unable to fetch hook metadata..."));
+          }
+        }
+      });
+
+      let selected_language = self.selected_language.clone();
+      self.dict_checksum = self.local_dict_checksum().unwrap_or(0);
+
+      spawn!({
+        match fetch_manifest::<DictManifest>(URL_DICT_MANIFEST) {
+          Ok(manifests) => {
+            write!(vec_dict_manifests, manifests.clone());
+            if let Some(manifest) = get_manifest_by_language(selected_language, manifests) {
+              write!(dict_manifest, manifest);
+            }
+          }
+          Err(_) => {
+            error!(t!("Unable to fetch dictionary metadata..."));
+          }
+        }
+      });
+
+      if self.df_os == OS::None {
+        egui::CentralPanel::default().show(ctx, |_ui| {
+          let dir = self.df_dir.clone();
+          self.open_file_dialog = self.file_dialog(dir);
+        });
+        return;
+      }
+
+      self.delete_old_data_check();
     }
-    None => false,
   }
-}
 
-pub fn get_lib_path(df_dir: &Option<PathBuf>, os: OS) -> Option<PathBuf> {
-  match (df_dir.clone(), os, is_dfhack_installed(&df_dir)) {
-    (Some(pathbuf), OS::Windows, true) => Some(pathbuf.join("hack/plugins/dfint-hook.plug.dll")),
-    (Some(pathbuf), OS::Windows, false) => Some(pathbuf.join("dfhooks.dll")),
-    (Some(pathbuf), OS::Linux, true) => Some(pathbuf.join("hack/plugins/dfint-hook.plug.so")),
-    (Some(pathbuf), OS::Linux, false) => Some(pathbuf.join("libdfhooks.so")),
-    (_, _, _) => None,
+  pub fn notify(&mut self) {
+    let (level, message) = read!(notify).clone();
+    if level != Notification::None {
+      match level {
+        Notification::Error => {
+          self.toast.error(message);
+        }
+        Notification::Warning => {
+          self.toast.warning(message);
+        }
+        Notification::Info => {
+          self.toast.info(message);
+        }
+        Notification::Success => {
+          self.toast.success(message);
+        }
+        Notification::None => (),
+      }
+      write!(notify, (Notification::None, "".into()));
+    }
   }
-}
 
-pub fn is_df_running() -> bool {
-  let s = System::new_all();
-  for _ in s.processes_by_exact_name("Dwarf Fortress.exe") {
-    return true;
+  pub fn recalculate_checksum(&mut self) {
+    let hc = read!(recalculate_hook_checksum);
+    if hc {
+      write!(recalculate_hook_checksum, false);
+      self.hook_checksum = self.local_hook_checksum().unwrap_or(0);
+    }
+    let dc = read!(recalculate_dict_checksum);
+    if dc {
+      write!(recalculate_dict_checksum, false);
+      self.dict_checksum = self.local_dict_checksum().unwrap_or(0);
+    }
   }
-  for _ in s.processes_by_exact_name("dwarfort") {
-    return true;
+
+  pub fn df_running_guard(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+    egui::CentralPanel::default().show(ctx, |_ui| {
+      let modal = egui_modal::Modal::new(ctx, "df_is_running");
+      modal.show(|ui| {
+        modal.title(ui, t!("Warning"));
+        modal.frame(ui, |ui| {
+          modal.body_and_icon(
+            ui,
+            t!("Dwarf Fortress is running. Close it before using the installer."),
+            egui_modal::Icon::Info,
+          );
+        });
+        modal.buttons(ui, |ui| {
+          if modal.caution_button(ui, "Ok").clicked() {
+            frame.close();
+          };
+        });
+      });
+      modal.open();
+    });
   }
-  false
-}
 
-#[allow(dead_code)]
-#[derive(Serialize, Deserialize, Clone)]
-pub struct HookManifest {
-  pub df: u32,
-  pub version: u32,
-  pub lib: String,
-  pub config: String,
-  pub offsets: String,
-}
+  pub fn delete_old_data_check(&mut self) {
+    if self.df_dir.is_none() {
+      return;
+    }
+    let launcher = self.df_dir.clone().unwrap().join("dfint_launcher.exe");
+    let old_data = self.df_dir.clone().unwrap().join("dfint_data");
+    if launcher.exists() || old_data.exists() {
+      self.delete_old_data_show = true;
+    }
+  }
 
-pub fn fetch_hook_manifest() -> Result<Vec<HookManifest>> {
-  let manifests: Vec<HookManifest> = ureq::get(URL_HOOK_MANIFEST).call()?.into_json()?;
-  Ok(manifests)
-}
+  pub fn delete_old_hook_dialog(&mut self, ctx: &egui::Context) {
+    let modal = egui_modal::Modal::new(ctx, "delete_old_data");
+    modal.show(|ui| {
+      modal.title(ui, t!("Warning"));
+      modal.frame(ui, |ui| {
+        modal.body_and_icon(
+          ui,
+          t!("Old version of translation files has been detected. It's better to delete them to avoid conflicts. Delete?"),
+          egui_modal::Icon::Info,
+        );
+      });
+      modal.buttons(ui, |ui| {
+        if modal.button(ui, t!("No")).clicked() {
+          self.delete_old_data_show = false;
+          modal.close();
+        };
+        if modal.suggested_button(ui, t!("Yes")).clicked() {
+          self.delete_old_data_show = false;
+          self.remove_old_data();
+          modal.close();
+          self.toast.success(t!("Old files successfully deleted"));
+        };
+      });
+    });
+    modal.open();
+  }
 
-pub fn get_manifest_by_df(df_checksum: u32, manifests: Vec<HookManifest>) -> Option<HookManifest> {
-  manifests.iter().find(|item| item.df == df_checksum).cloned()
-}
+  pub fn update_data(&mut self) {
+    let _ = self.create_dir_if_not_exist();
 
-#[allow(dead_code)]
-#[derive(Serialize, Deserialize, Clone)]
-pub struct DictManifest {
-  pub language: String,
-  pub version: u32,
-  pub csv: String,
-  pub font: String,
-  pub encoding: String,
-}
+    let hook_manifest = read!(hook_manifest).clone();
+    let df_dir = self.df_dir.clone().unwrap();
+    let lib = self.get_lib_path().unwrap();
+    if hook_manifest.df == self.df_checksum && hook_manifest.version != self.hook_checksum {
+      let loading = read!(loading);
+      write!(loading, loading + 1);
+      spawn!({
+        let r1 = download_to_file(&hook_manifest.lib, &lib);
+        let r2 = download_to_file(&hook_manifest.config, &df_dir.join(PATH_CONFIG));
+        let r3 = download_to_file(&hook_manifest.offsets, &df_dir.join(PATH_OFFSETS));
+        let loading = read!(loading);
+        if r1.is_ok() && r2.is_ok() && r3.is_ok() {
+          write!(recalculate_hook_checksum, true);
+          success!(t!("Hook updated"));
+        } else {
+          error!(t!("Unable to update hook"));
+        }
+        write!(loading, loading - 1);
+      });
+    }
 
-pub fn fetch_dict_manifest() -> Result<Vec<DictManifest>> {
-  let manifests: Vec<DictManifest> = ureq::get(URL_DICT_MANIFEST).call()?.into_json()?;
-  return Ok(manifests);
-}
+    let dict_manifest = read!(dict_manifest).clone();
+    let df_dir = self.df_dir.clone().unwrap();
+    if dict_manifest.version != self.dict_checksum && self.selected_language != "None" {
+      let loading = read!(loading);
+      write!(loading, loading + 1);
+      spawn!({
+        let r1 = download_to_file(&dict_manifest.csv, &df_dir.join(PATH_DICT));
+        let r2 = download_to_file(&dict_manifest.font, &df_dir.join(PATH_FONT));
+        let r3 = download_to_file(&dict_manifest.encoding, &df_dir.join(PATH_ENCODING));
+        let loading = read!(loading);
+        if r1.is_ok() && r2.is_ok() && r3.is_ok() {
+          write!(recalculate_dict_checksum, true);
+          success!(t!("Dictionary updated"));
+        } else {
+          error!(t!("Unable to update dictionary"));
+        }
+        write!(loading, loading - 1);
+      });
+    }
+  }
 
-pub fn get_manifest_by_language(language: String, manifests: Vec<DictManifest>) -> Option<DictManifest> {
-  manifests.iter().find(|item| item.language == language).cloned()
-}
+  pub fn get_lib_path(&self) -> Option<PathBuf> {
+    match (&self.df_dir, self.df_os, self.is_dfhack_installed()) {
+      (Some(pathbuf), OS::Windows, true) => Some(pathbuf.join("hack/plugins/dfint-hook.plug.dll")),
+      (Some(pathbuf), OS::Windows, false) => Some(pathbuf.join("dfhooks.dll")),
+      (Some(pathbuf), OS::Linux, true) => Some(pathbuf.join("hack/plugins/dfint-hook.plug.so")),
+      (Some(pathbuf), OS::Linux, false) => Some(pathbuf.join("libdfhooks.so")),
+      (_, _, _) => None,
+    }
+  }
 
-pub fn download_to_file(url: &str, file: &PathBuf) -> Result<()> {
-  let mut data: Vec<u8> = vec![];
-  ureq::get(url).call()?.into_reader().read_to_end(&mut data)?;
-  std::fs::write(file, &data)?;
-  Ok(())
-}
+  pub fn is_dfhack_installed(&self) -> bool {
+    match &self.df_dir {
+      Some(path) => {
+        (path.join("dfhooks.dll").exists() || path.join("libdfhooks.so").exists()) && path.join("hack/plugins").exists()
+      }
+      None => false,
+    }
+  }
 
-pub fn remove_old_data(df_dir: &Option<PathBuf>) {
-  if let Some(pathbuf) = df_dir {
-    let _ = std::fs::remove_file(pathbuf.join("dfint_launcher.exe"));
-    let _ = std::fs::remove_dir_all(pathbuf.join("dfint_data"));
+  pub fn local_hook_checksum(&self) -> Result<u32> {
+    match &self.df_dir {
+      Some(pathbuf) => checksum_for_files(vec![
+        self.get_lib_path(),
+        Some(pathbuf.join(PATH_CONFIG)),
+        Some(pathbuf.join(PATH_OFFSETS)),
+      ]),
+      None => Ok(0),
+    }
+  }
+
+  pub fn local_dict_checksum(&self) -> Result<u32> {
+    match &self.df_dir {
+      Some(pathbuf) => checksum_for_files(vec![
+        Some(pathbuf.join(PATH_DICT)),
+        Some(pathbuf.join(PATH_FONT)),
+        Some(pathbuf.join(PATH_ENCODING)),
+      ]),
+      None => Ok(0),
+    }
+  }
+
+  pub fn create_dir_if_not_exist(&self) -> Result<()> {
+    if let Some(pathbuf) = &self.df_dir {
+      std::fs::create_dir_all(pathbuf.join(PATH_DATA))?;
+    }
+    Ok(())
+  }
+
+  pub fn remove_old_data(&self) {
+    if let Some(pathbuf) = &self.df_dir {
+      let _ = std::fs::remove_file(pathbuf.join("dfint_launcher.exe"));
+      let _ = std::fs::remove_dir_all(pathbuf.join("dfint_data"));
+    }
   }
 }

@@ -1,7 +1,7 @@
 use anyhow::Result;
 
 use crate::constants::PATH_CACHE_FILE;
-use crate::logic::{DictManifest, HookManifest};
+use crate::utils::{DictManifest, HookManifest};
 
 #[derive(Serialize, Deserialize)]
 pub struct Store {

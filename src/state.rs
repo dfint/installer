@@ -1,4 +1,4 @@
-use crate::logic::{DictManifest, HookManifest, Notification};
+use crate::utils::{DictManifest, HookManifest, Notification};
 
 macro_rules! read {
   ($l:ident) => {

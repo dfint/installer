@@ -11,6 +11,7 @@ mod localization;
 mod logic;
 mod persistent;
 mod state;
+mod utils;
 
 fn main() -> Result<(), eframe::Error> {
   env_logger::init();
