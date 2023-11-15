@@ -221,7 +221,7 @@ impl App {
     let hook_manifest = read!(hook_manifest).clone();
     let df_dir = self.df_dir.clone().unwrap();
     let lib = self.get_lib_path().unwrap();
-    if hook_manifest.df == self.df_checksum && hook_manifest.version != self.hook_checksum {
+    if hook_manifest.df == self.df_checksum && hook_manifest.checksum != self.hook_checksum {
       let loading = read!(loading);
       write!(loading, loading + 1);
       spawn!({
@@ -241,7 +241,7 @@ impl App {
 
     let dict_manifest = read!(dict_manifest).clone();
     let df_dir = self.df_dir.clone().unwrap();
-    if dict_manifest.version != self.dict_checksum && self.selected_language != "None" {
+    if dict_manifest.checksum != self.dict_checksum && self.selected_language != "None" {
       let loading = read!(loading);
       write!(loading, loading + 1);
       spawn!({

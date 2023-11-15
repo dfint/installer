@@ -143,11 +143,11 @@ impl eframe::App for App {
         let hook_manifest = read!(hook_manifest).clone();
         ui.label(t!("Version"));
         ui.label(self.hook_checksum.to_string());
-        ui.label(hook_manifest.version.to_string());
+        ui.label(hook_manifest.checksum.to_string());
         ui.label(
           match (
             hook_manifest.df == self.df_checksum,
-            hook_manifest.version == self.hook_checksum,
+            hook_manifest.checksum == self.hook_checksum,
           ) {
             (true, true) => format!("✅ {}", t!("up-to-date")),
             (true, false) => format!("⚠ {}", t!("update available")),
@@ -187,10 +187,10 @@ impl eframe::App for App {
           );
           let dict_manifest = &read!(dict_manifest);
           ui.label(self.dict_checksum.to_string());
-          ui.label(dict_manifest.version.to_string());
+          ui.label(dict_manifest.checksum.to_string());
           ui.label(
             match (
-              dict_manifest.version == self.dict_checksum,
+              dict_manifest.checksum == self.dict_checksum,
               self.selected_language == "None",
             ) {
               (true, false) => format!("✅ {}", t!("up-to-date")),
@@ -206,8 +206,8 @@ impl eframe::App for App {
       let hook_manifest = read!(hook_manifest).clone();
       let dict_manifest = read!(dict_manifest).clone();
 
-      if (hook_manifest.df == self.df_checksum && hook_manifest.version != self.hook_checksum)
-        || (dict_manifest.version != self.dict_checksum && self.selected_language != "None")
+      if (hook_manifest.df == self.df_checksum && hook_manifest.checksum != self.hook_checksum)
+        || (dict_manifest.checksum != self.dict_checksum && self.selected_language != "None")
       {
         ui.style_mut().text_styles.insert(
           egui::TextStyle::Button,

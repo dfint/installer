@@ -29,7 +29,7 @@ pub struct State {
 pub static mut STATE: State = State {
   hook_manifest: HookManifest {
     df: 0,
-    version: 0,
+    checksum: 0,
     lib: "".into(),
     config: "".into(),
     offsets: "".into(),
@@ -37,7 +37,7 @@ pub static mut STATE: State = State {
   vec_hook_manifests: vec![],
   dict_manifest: DictManifest {
     language: "-".into(),
-    version: 0,
+    checksum: 0,
     csv: "".into(),
     font: "".into(),
     encoding: "".into(),

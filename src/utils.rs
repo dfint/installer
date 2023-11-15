@@ -10,7 +10,7 @@ use sysinfo::{System, SystemExt};
 #[derive(Serialize, Deserialize, Clone)]
 pub struct HookManifest {
   pub df: u32,
-  pub version: u32,
+  pub checksum: u32,
   pub lib: String,
   pub config: String,
   pub offsets: String,
@@ -20,7 +20,7 @@ pub struct HookManifest {
 #[derive(Serialize, Deserialize, Clone)]
 pub struct DictManifest {
   pub language: String,
-  pub version: u32,
+  pub checksum: u32,
   pub csv: String,
   pub font: String,
   pub encoding: String,
