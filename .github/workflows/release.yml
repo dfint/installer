@@ -1,0 +1,74 @@
+name: Release
+
+on:
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  VERSION: 0.0.1
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Build
+        shell: bash
+        run: HOOK_VERSION=${{ github.sha }} cargo build --release
+
+      - name: Upload artifact (win)
+        uses: actions/upload-artifact@v3
+        if: matrix.os == 'windows-latest'
+        with:
+          name: artifact
+          path: ./target/release/dfint-installer.exe
+
+      - name: Upload artifact (linux)
+        uses: actions/upload-artifact@v3
+        if: matrix.os == 'ubuntu-latest'
+        with:
+          name: artifact
+          path: ./target/release/dfint-installer
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Restore files
+        uses: actions/download-artifact@v3
+        id: download
+        with:
+          name: artifact
+          path: ./
+
+      - name: Fetch version from Cargo.toml
+        run: echo VERSION=$(cat Cargo.toml | awk -F'"' '/^version/ {print $2}') >> $GITHUB_ENV
+
+      - name: Rename files
+        run: |
+          mv ./dfint-installer.exe ./installer_${{ env.VERSION }}.exe
+          mv ./dfint-installer ./installer_${{ env.VERSION }}
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            installer_${{ env.VERSION }}.exe
+            installer_${{ env.VERSION }}
+          tag_name: ${{ env.VERSION }}
+          draft: true
