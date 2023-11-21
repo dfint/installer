@@ -26,7 +26,7 @@ jobs:
 
       - name: Build
         shell: bash
-        run: HOOK_VERSION=${{ github.sha }} cargo build --release
+        run: cargo build --release
 
       - name: Upload artifact (win)
         uses: actions/upload-artifact@v3
