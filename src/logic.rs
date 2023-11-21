@@ -273,7 +273,16 @@ impl App {
   pub fn is_dfhack_installed(&self) -> bool {
     match &self.df_dir {
       Some(path) => {
-        (path.join("dfhooks.dll").exists() || path.join("libdfhooks.so").exists()) && path.join("hack/plugins").exists()
+        if path.join("hack/plugins").exists() {
+          let dfhooks_data = match (path.join("dfhooks.dll").exists(), path.join("libdfhooks.so").exists()) {
+            (true, _) => std::fs::read(path.join("dfhooks.dll")).unwrap(),
+            (_, true) => std::fs::read(path.join("libdfhooks.so")).unwrap(),
+            (false, false) => vec![0],
+          };
+          !contains_subsequence(b"super_secret_dfint_sign", &dfhooks_data)
+        } else {
+          false
+        }
       }
       None => false,
     }

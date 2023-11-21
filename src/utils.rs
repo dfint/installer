@@ -155,3 +155,15 @@ pub fn download_to_file(url: &str, file: &PathBuf) -> Result<()> {
   std::fs::write(file, &data)?;
   Ok(())
 }
+
+pub fn contains_subsequence(needle: &[u8], haystack: &[u8]) -> bool {
+  'outer: for i in 0..haystack.len() {
+    for j in 0..needle.len() {
+      if needle[j] != haystack[i + j] {
+        continue 'outer;
+      }
+    }
+    return true;
+  }
+  false
+}
