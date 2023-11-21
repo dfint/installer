@@ -279,7 +279,11 @@ impl App {
             (_, true) => std::fs::read(path.join("libdfhooks.so")).unwrap(),
             (false, false) => vec![0],
           };
-          !contains_subsequence(b"super_secret_dfint_sign", &dfhooks_data)
+          if dfhooks_data.len() > 1 {
+            !contains_subsequence(b"super_secret_dfint_sign", &dfhooks_data)
+          } else {
+            false
+          }
         } else {
           false
         }
