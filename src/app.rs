@@ -16,6 +16,7 @@ pub struct App {
   pub delete_old_data_show: bool,
   pub on_start: bool,
   pub df_running: bool,
+  pub dfhack_installed: bool,
   pub selected_language: String,
   pub df_os: OS,
   pub df_dir: Option<PathBuf>,
@@ -36,6 +37,8 @@ impl Default for App {
       Err(_) => (scan_df(), String::from("None")),
     };
 
+    let df_dir = df_dir_by_bin(&df_bin);
+
     Self {
       toast: egui_notify::Toasts::default().with_anchor(egui_notify::Anchor::BottomRight),
       open_file_dialog: None,
@@ -43,9 +46,10 @@ impl Default for App {
       delete_old_data_show: false,
       on_start: true,
       df_running: is_df_running(),
+      dfhack_installed: is_dfhack_installed(&df_dir),
       selected_language,
       df_os: df_os_by_bin(&df_bin),
-      df_dir: df_dir_by_bin(&df_bin),
+      df_dir: df_dir,
       df_bin,
       df_checksum: 0,
       hook_checksum: 0,
@@ -72,9 +76,23 @@ impl eframe::App for App {
   fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
     // Logic block
 
-    // df running guard
+    // guards
     if self.df_running {
-      self.df_running_guard(ctx, frame);
+      self.guard(
+        ctx,
+        frame,
+        "df_is_running",
+        "Dwarf Fortress is running. Close it before using the installer.",
+      );
+      return;
+    }
+    if self.dfhack_installed {
+      self.guard(
+        ctx,
+        frame,
+        "dfhack_installed",
+        "An installed DFHack has been detected. Simultaneous work with translation is not supported at the moment.",
+      );
       return;
     }
     // on first update (on startup)

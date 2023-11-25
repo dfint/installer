@@ -18,6 +18,7 @@
   "Unable to fetch dictionary metadata...": "Unable to fetch dictionary metadata...",
   "Warning": "Warning",
   "Dwarf Fortress is running. Close it before using the installer.": "Dwarf Fortress is running. Close it before using the installer.",
+  "An installed DFHack has been detected. Simultaneous work with translation is not supported at the moment.": "An installed DFHack has been detected. Simultaneous work with translation is not supported at the moment.",
   "Ok": "Ok",
   "Old version of translation files has been detected. It's better to delete them to avoid conflicts. Delete?": "Old version of translation files has been detected. It's better to delete them to avoid conflicts. Delete?",
   "No": "No",

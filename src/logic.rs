@@ -55,6 +55,7 @@ impl App {
           self.df_checksum = df_checksum(&self.df_bin, self.df_os).unwrap_or(0);
           self.hook_checksum = self.local_hook_checksum().unwrap_or(0);
           self.dict_checksum = self.local_dict_checksum().unwrap_or(0);
+          self.dfhack_installed = is_dfhack_installed(&self.df_dir);
           let manifests = read!(vec_hook_manifests).clone();
           if let Some(manifest) = get_manifest_by_df(self.df_checksum, manifests) {
             write!(hook_manifest, manifest);
@@ -155,17 +156,13 @@ impl App {
     }
   }
 
-  pub fn df_running_guard(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+  pub fn guard(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame, name: &str, text: &str) {
     egui::CentralPanel::default().show(ctx, |_ui| {
-      let modal = egui_modal::Modal::new(ctx, "df_is_running");
+      let modal = egui_modal::Modal::new(ctx, name);
       modal.show(|ui| {
         modal.title(ui, t!("Warning"));
         modal.frame(ui, |ui| {
-          modal.body_and_icon(
-            ui,
-            t!("Dwarf Fortress is running. Close it before using the installer."),
-            egui_modal::Icon::Info,
-          );
+          modal.body_and_icon(ui, t!(text), egui_modal::Icon::Info);
         });
         modal.buttons(ui, |ui| {
           if modal.caution_button(ui, "Ok").clicked() {
@@ -261,34 +258,12 @@ impl App {
   }
 
   pub fn get_lib_path(&self) -> Option<PathBuf> {
-    match (&self.df_dir, self.df_os, self.is_dfhack_installed()) {
+    match (&self.df_dir, self.df_os, is_dfhack_installed(&self.df_dir)) {
       (Some(pathbuf), OS::Windows, true) => Some(pathbuf.join("hack/plugins/dfint-hook.plug.dll")),
       (Some(pathbuf), OS::Windows, false) => Some(pathbuf.join("dfhooks.dll")),
       (Some(pathbuf), OS::Linux, true) => Some(pathbuf.join("hack/plugins/dfint-hook.plug.so")),
       (Some(pathbuf), OS::Linux, false) => Some(pathbuf.join("libdfhooks.so")),
       (_, _, _) => None,
-    }
-  }
-
-  pub fn is_dfhack_installed(&self) -> bool {
-    match &self.df_dir {
-      Some(path) => {
-        if path.join("hack/plugins").exists() {
-          let dfhooks_data = match (path.join("dfhooks.dll").exists(), path.join("libdfhooks.so").exists()) {
-            (true, _) => std::fs::read(path.join("dfhooks.dll")).unwrap(),
-            (_, true) => std::fs::read(path.join("libdfhooks.so")).unwrap(),
-            (false, false) => vec![0],
-          };
-          if dfhooks_data.len() > 1 {
-            !contains_subsequence(b"super_secret_dfint_sign", &dfhooks_data)
-          } else {
-            false
-          }
-        } else {
-          false
-        }
-      }
-      None => false,
     }
   }
 

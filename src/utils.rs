@@ -136,6 +136,28 @@ pub fn is_df_running() -> bool {
   false
 }
 
+pub fn is_dfhack_installed(df_dir: &Option<PathBuf>) -> bool {
+  match df_dir {
+    Some(path) => {
+      if path.join("hack/plugins").exists() {
+        let dfhooks_data = match (path.join("dfhooks.dll").exists(), path.join("libdfhooks.so").exists()) {
+          (true, _) => std::fs::read(path.join("dfhooks.dll")).unwrap(),
+          (_, true) => std::fs::read(path.join("libdfhooks.so")).unwrap(),
+          (false, false) => vec![0],
+        };
+        if dfhooks_data.len() > 1 {
+          !contains_subsequence(b"super_secret_dfint_sign", &dfhooks_data)
+        } else {
+          false
+        }
+      } else {
+        false
+      }
+    }
+    None => false,
+  }
+}
+
 pub fn fetch_manifest<T: for<'de> serde::Deserialize<'de>>(url: &str) -> Result<Vec<T>> {
   let manifests: Vec<T> = ureq::get(url).call()?.into_json()?;
   return Ok(manifests);
