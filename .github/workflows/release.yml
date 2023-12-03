@@ -68,7 +68,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            installer_${{ env.VERSION }}.exe
-            installer_${{ env.VERSION }}
+            dfint-installer_${{ env.VERSION }}.exe
+            dfint-installer_${{ env.VERSION }}
           tag_name: ${{ env.VERSION }}
           draft: true
