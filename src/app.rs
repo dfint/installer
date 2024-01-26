@@ -91,7 +91,7 @@ impl eframe::App for App {
         ctx,
         frame,
         "dfhack_installed",
-        "An installed DFHack has been detected. Simultaneous work with translation is not supported at the moment.",
+        "An installed DFHack has been detected. Currently, DFHack and the translation cannot be used simultaneously.",
       );
       return;
     }
