@@ -54,6 +54,7 @@ jobs:
         id: download
         with:
           pattern: artifact-*
+          merge-multiple: true
           path: ./
 
       - name: Fetch version from Cargo.toml
