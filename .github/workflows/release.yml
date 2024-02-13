@@ -65,8 +65,8 @@ jobs:
 
       - name: Rename files
         run: |
-          mv release/dfint-installer.exe ./dfint-installer_${{ env.VERSION }}.exe
-          mv release/dfint-installer ./dfint-installer_${{ env.VERSION }}
+          mv release/dfint-installer.exe release/dfint-installer_${{ env.VERSION }}.exe
+          mv release/dfint-installer release/dfint-installer_${{ env.VERSION }}
 
       - name: Release
         uses: softprops/action-gh-release@v1
