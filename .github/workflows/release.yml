@@ -55,21 +55,24 @@ jobs:
         with:
           pattern: artifact-*
           merge-multiple: true
-          path: ./
+          path: release
+
+      - name: Display structure of downloaded files  # TODO: just for testing, remove before merging
+        run: ls -R release
 
       - name: Fetch version from Cargo.toml
         run: echo VERSION=$(cat Cargo.toml | awk -F'"' '/^version/ {print $2}') >> $GITHUB_ENV
 
       - name: Rename files
         run: |
-          mv ./dfint-installer.exe ./dfint-installer_${{ env.VERSION }}.exe
-          mv ./dfint-installer ./dfint-installer_${{ env.VERSION }}
+          mv release/dfint-installer.exe ./dfint-installer_${{ env.VERSION }}.exe
+          mv release/dfint-installer ./dfint-installer_${{ env.VERSION }}
 
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            dfint-installer_${{ env.VERSION }}.exe
-            dfint-installer_${{ env.VERSION }}
+            release/dfint-installer_${{ env.VERSION }}.exe
+            release/dfint-installer_${{ env.VERSION }}
           tag_name: ${{ env.VERSION }}
           draft: true
