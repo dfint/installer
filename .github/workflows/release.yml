@@ -30,14 +30,14 @@ jobs:
 
       - name: Upload artifact (win)
         uses: actions/upload-artifact@v4
-        if: matrix.os == 'windows-latest'
+        if: startsWith(matrix.os, 'windows')
         with:
           name: artifact-windows
           path: ./target/release/dfint-installer.exe
 
       - name: Upload artifact (linux)
         uses: actions/upload-artifact@v4
-        if: matrix.os == 'ubuntu-latest'
+        if: startsWith(matrix.os, 'ubuntu')
         with:
           name: artifact-linux
           path: ./target/release/dfint-installer
@@ -56,9 +56,6 @@ jobs:
           pattern: artifact-*
           merge-multiple: true
           path: release
-
-      - name: Display structure of downloaded files  # TODO: just for testing, remove before merging
-        run: ls -R release
 
       - name: Fetch version from Cargo.toml
         run: echo VERSION=$(cat Cargo.toml | awk -F'"' '/^version/ {print $2}') >> $GITHUB_ENV
