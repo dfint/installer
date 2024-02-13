@@ -28,7 +28,7 @@ jobs:
         shell: bash
         run: cargo build --release
 
-      - name: Upload artifact (win)
+      - name: Upload artifact (windows)
         uses: actions/upload-artifact@v4
         if: startsWith(matrix.os, 'windows')
         with:
