@@ -112,10 +112,8 @@ impl eframe::App for App {
     // status bar
     egui::TopBottomPanel::bottom("status").show(ctx, |ui| {
       ui.horizontal_centered(|ui| {
-        ui.add(egui::Image::new(BOOSTY_ICON.to_owned()).max_height(15.).max_width(15.));
-        ui.hyperlink_to(t!("support"), URL_BOOSTY);
         ui.add(egui::Image::new(GITHUB_ICON.to_owned()).max_height(15.).max_width(15.));
-        ui.hyperlink_to(t!("report bug"), URL_BUGS);
+        ui.hyperlink_to(t!("Report bug"), URL_BUGS);
         ui.label(format!("v{VERSION}"));
       })
     });
