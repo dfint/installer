@@ -1,7 +1,5 @@
 pub const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
-pub const BOOSTY_ICON: eframe::egui::widgets::ImageSource<'static> =
-  eframe::egui::include_image!("../assets/boosty.png");
 pub const GITHUB_ICON: eframe::egui::widgets::ImageSource<'static> =
   eframe::egui::include_image!("../assets/github.png");
 pub const APP_ICON: &'static [u8; 1980] = include_bytes!("../assets/df.png");
