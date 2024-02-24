@@ -62,14 +62,15 @@ jobs:
 
       - name: Rename files
         run: |
-          mv release/dfint-installer.exe release/dfint-installer-${{ env.VERSION }}.exe
-          mv release/dfint-installer release/dfint-installer-${{ env.VERSION }}
+          zip release/dfint-installer-win-${{ env.VERSION }}.zip release/dfint-installer.exe
+          chmod +x release/dfint-installer
+          tar -czf release/dfint-installer-lin-${{ env.VERSION }}.tar.gz release/dfint-installer
 
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            release/dfint-installer-${{ env.VERSION }}.exe
-            release/dfint-installer-${{ env.VERSION }}
+            release/dfint-installer-win-${{ env.VERSION }}.zip
+            release/dfint-installer-lin-${{ env.VERSION }}.tar.gz
           tag_name: ${{ env.VERSION }}
           draft: true
