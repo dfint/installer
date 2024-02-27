@@ -13,13 +13,15 @@ pub struct Store {
   pub selected_language: String,
 }
 
-pub fn save(store: Store) -> Result<()> {
-  let _ = std::fs::write(PATH_CACHE_FILE, serde_json::to_string_pretty(&store)?)?;
-  Ok(())
-}
+impl Store {
+  pub fn load() -> Result<Self> {
+    let content = std::fs::read_to_string(PATH_CACHE_FILE)?;
+    let store: Store = serde_json::from_str(&content)?;
+    Ok(store)
+  }
 
-pub fn load() -> Result<Store> {
-  let content = std::fs::read_to_string(PATH_CACHE_FILE)?;
-  let store: Store = serde_json::from_str(&content)?;
-  Ok(store)
+  pub fn save(&self) -> Result<()> {
+    let _ = std::fs::write(PATH_CACHE_FILE, serde_json::to_string_pretty(self)?)?;
+    Ok(())
+  }
 }

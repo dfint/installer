@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use crate::{
   constants::*,
   localization::{t, LOCALE},
-  persistent,
+  persistent::Store,
   state::{read, write, STATE},
   utils::*,
 };
@@ -29,7 +29,7 @@ pub struct App {
 
 impl Default for App {
   fn default() -> Self {
-    let (df_bin, selected_language) = match persistent::load() {
+    let (df_bin, selected_language) = match Store::load() {
       Ok(store) => {
         write!(hook_manifest, store.hook_manifest);
         write!(dict_manifest, store.dict_manifest);
@@ -63,14 +63,15 @@ impl Default for App {
 impl eframe::App for App {
   fn on_close_event(&mut self) -> bool {
     if self.df_bin.is_some() {
-      let _ = persistent::save(persistent::Store {
+      let _ = Store {
         df_bin: self.df_bin.clone().unwrap().as_path().display().to_string(),
         hook_manifest: read!(hook_manifest).clone(),
         vec_hook_manifests: read!(vec_hook_manifests).clone(),
         dict_manifest: read!(dict_manifest).clone(),
         vec_dict_manifests: read!(vec_dict_manifests).clone(),
         selected_language: self.selected_language.clone(),
-      });
+      }
+      .save();
     }
     true
   }
