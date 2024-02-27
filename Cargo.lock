@@ -835,6 +835,7 @@ dependencies = [
  "egui_file",
  "env_logger",
  "exe",
+ "include_dir",
  "serde",
  "serde_derive",
  "serde_json",
@@ -1531,6 +1532,25 @@ name = "imagesize"
 version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "df19da1e92fbfec043ca97d622955381b1f3ee72a180ec999912df31b1ccd951"
+
+[[package]]
+name = "include_dir"
+version = "0.7.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "18762faeff7122e89e0857b02f7ce6fcc0d101d5e9ad2ad7846cc01d61b7f19e"
+dependencies = [
+ "include_dir_macros",
+]
+
+[[package]]
+name = "include_dir_macros"
+version = "0.7.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b139284b5cf57ecfa712bcc66950bb635b31aff41c188e8a4cfc758eca374a3f"
+dependencies = [
+ "proc-macro2",
+ "quote",
+]
 
 [[package]]
 name = "indexmap"

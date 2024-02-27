@@ -1,4 +1,7 @@
+use include_dir::{include_dir, Dir};
 use std::collections::HashMap;
+
+const LOCALES: Dir<'_> = include_dir!("./locale");
 
 #[static_init::dynamic]
 pub static mut LOCALE: Localization = {
@@ -7,10 +10,16 @@ pub static mut LOCALE: Localization = {
 };
 
 #[static_init::dynamic]
-static TRANSLATIONS: HashMap<String, &'static str> = HashMap::from([
-  ("en-US".to_owned(), std::include_str!("../locale/en-US.json")),
-  ("ru-RU".to_owned(), std::include_str!("../locale/ru-RU.json")),
-]);
+static TRANSLATIONS: HashMap<String, &'static str> = {
+  let mut map = HashMap::<String, &'static str>::new();
+  for file in LOCALES.files() {
+    map.insert(
+      file.path().file_stem().unwrap().to_str().unwrap().to_owned(),
+      file.contents_utf8().unwrap(),
+    );
+  }
+  map
+};
 
 macro_rules! t {
   ($l:expr) => {
