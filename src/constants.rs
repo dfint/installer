@@ -10,7 +10,6 @@ pub const URL_HOOK_MANIFEST: &'static str =
   "https://raw.githubusercontent.com/dfint/update-data/main/metadata/hook.json";
 pub const URL_DICT_MANIFEST: &'static str =
   "https://raw.githubusercontent.com/dfint/update-data/main/metadata/dict.json";
-pub const URL_BOOSTY: &'static str = "https://boosty.to/dfrus";
 pub const URL_BUGS: &'static str = "https://github.com/dfint/installer/issues";
 
 pub const PATH_DATA: &'static str = "dfint-data";

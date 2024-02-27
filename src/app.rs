@@ -18,6 +18,7 @@ pub struct App {
   pub df_running: bool,
   pub dfhack_installed: bool,
   pub selected_language: String,
+  pub ui_locale: String,
   pub df_os: OS,
   pub df_dir: Option<PathBuf>,
   pub df_bin: Option<PathBuf>,
@@ -48,6 +49,7 @@ impl Default for App {
       df_running: is_df_running(),
       dfhack_installed: is_dfhack_installed(&df_dir),
       selected_language,
+      ui_locale: LOCALE.read().current_locale(),
       df_os: df_os_by_bin(&df_bin),
       df_dir: df_dir,
       df_bin,
@@ -110,12 +112,22 @@ impl eframe::App for App {
 
     // UI block
     // status bar
-    egui::TopBottomPanel::bottom("status").show(ctx, |ui| {
+    egui::TopBottomPanel::bottom("status").min_height(25.).show(ctx, |ui| {
       ui.horizontal_centered(|ui| {
         ui.add(egui::Image::new(GITHUB_ICON.to_owned()).max_height(15.).max_width(15.));
         ui.hyperlink_to(t!("Report bug"), URL_BUGS);
         ui.label(format!("v{VERSION}"));
-      })
+        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+          egui::ComboBox::from_id_source("locale").selected_text(&self.ui_locale).width(60.).show_ui(ui, |ui| {
+            let mut lock = LOCALE.write();
+            for item in lock.locales() {
+              if ui.selectable_value(&mut self.ui_locale, item.clone(), item.clone()).clicked() {
+                lock.set(&item)
+              }
+            }
+          });
+        });
+      });
     });
 
     egui::CentralPanel::default().show(ctx, |ui| {
