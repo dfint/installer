@@ -160,7 +160,7 @@ pub fn is_dfhack_installed(df_dir: &Option<PathBuf>) -> bool {
 
 pub fn fetch_manifest<T: for<'de> serde::Deserialize<'de>>(url: &str) -> Result<Vec<T>> {
   let manifests: Vec<T> = ureq::get(url).call()?.into_json()?;
-  return Ok(manifests);
+  Ok(manifests)
 }
 
 pub fn get_manifest_by_df(df_checksum: u32, manifests: Vec<HookManifest>) -> Option<HookManifest> {

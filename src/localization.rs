@@ -5,7 +5,7 @@ const LOCALES: Dir<'_> = include_dir!("./locale");
 
 #[static_init::dynamic]
 pub static mut LOCALE: Localization = {
-  let locale = sys_locale::get_locale().unwrap_or("en-US".to_owned());
+  let locale = sys_locale::get_locale().unwrap_or("en-US".to_string()).split('-').collect::<Vec<&str>>()[0].to_owned();
   Localization::new(locale)
 };
 
@@ -37,7 +37,7 @@ impl Localization {
   pub fn new(locale: String) -> Self {
     let translation: HashMap<String, String> = match TRANSLATIONS.get(&locale) {
       Some(v) => serde_json::from_str(v).unwrap(),
-      None => serde_json::from_str(TRANSLATIONS.get("en-US").unwrap()).unwrap(),
+      None => serde_json::from_str(TRANSLATIONS.get("en").unwrap()).unwrap(),
     };
 
     Self {
@@ -54,7 +54,7 @@ impl Localization {
     self.locale = s.to_owned();
     self.map = match TRANSLATIONS.get(s) {
       Some(v) => serde_json::from_str(v).unwrap(),
-      None => serde_json::from_str(TRANSLATIONS.get("en-US").unwrap()).unwrap(),
+      None => serde_json::from_str(TRANSLATIONS.get("en").unwrap()).unwrap(),
     };
   }
 
