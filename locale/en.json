@@ -26,5 +26,8 @@
   "Hook updated": "Hook updated",
   "Unable to update hook": "Unable to update hook",
   "Dictionary updated": "Dictionary updated",
-  "Unable to update dictionary": "Unable to update dictionary"
+  "Unable to update dictionary": "Unable to update dictionary",
+  "Delete localization files": "Delete localization files",
+  "Delete all localization files?": "Delete all localization files?",
+  "Localization files successfully deleted": "Localization files successfully deleted"
 }

@@ -14,6 +14,7 @@ pub struct App {
   pub open_file_dialog: Option<egui_file::FileDialog>,
   pub opened_file: Option<PathBuf>,
   pub delete_old_data_show: bool,
+  pub delete_hook_show: bool,
   pub on_start: bool,
   pub df_running: bool,
   pub dfhack_installed: bool,
@@ -45,6 +46,7 @@ impl Default for App {
       open_file_dialog: None,
       opened_file: None,
       delete_old_data_show: false,
+      delete_hook_show: false,
       on_start: true,
       df_running: is_df_running(),
       dfhack_installed: is_dfhack_installed(&df_dir),
@@ -110,6 +112,10 @@ impl eframe::App for App {
     if self.delete_old_data_show {
       self.delete_old_hook_dialog(ctx)
     }
+    // if delete hook dialog opened
+    if self.delete_hook_show {
+      self.delete_hook_dialog(ctx)
+    }
 
     // UI block
     // status bar
@@ -166,7 +172,19 @@ impl eframe::App for App {
         return;
       }
 
-      ui.heading(t!("Hook"));
+      ui.horizontal(|ui| {
+        ui.heading(t!("Hook"));
+        // cheksums without lozalization files
+        if self.hook_checksum != 4282505490 || self.dict_checksum != 3201258627 {
+          ui.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |ui| {
+            let button =
+              ui.add_sized([20., 20.], egui::Button::new("🗑")).on_hover_text(t!("Delete localization files"));
+            if button.clicked() {
+              self.delete_hook_show = true
+            }
+          });
+        }
+      });
       ui.separator();
 
       egui::Grid::new("hook grid").num_columns(4).min_col_width(150.).spacing([5., 5.]).striped(true).show(ui, |ui| {

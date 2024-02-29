@@ -26,5 +26,8 @@
   "Hook updated": "Хук обновлён",
   "Unable to update hook": "Ошибка при обновлении хука",
   "Dictionary updated": "Словарь обновлён",
-  "Unable to update dictionary": "Ошибка при обновлении словаря"
+  "Unable to update dictionary": "Ошибка при обновлении словаря",
+  "Delete localization files": "Удалить файлы локализации",
+  "Delete all localization files?": "Удалить все файлы локализации?",
+  "Localization files successfully deleted": "Файлы локализации успешно удалены"
 }

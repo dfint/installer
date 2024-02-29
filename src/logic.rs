@@ -212,6 +212,31 @@ impl App {
     modal.open();
   }
 
+  pub fn delete_hook_dialog(&mut self, ctx: &egui::Context) {
+    let modal = egui_modal::Modal::new(ctx, "delete_data");
+    modal.show(|ui| {
+      modal.title(ui, t!("Warning"));
+      modal.frame(ui, |ui| {
+        modal.body_and_icon(ui, t!("Delete all localization files?"), egui_modal::Icon::Info);
+      });
+      modal.buttons(ui, |ui| {
+        if modal.button(ui, t!("No")).clicked() {
+          self.delete_hook_show = false;
+          modal.close();
+        };
+        if modal.suggested_button(ui, t!("Yes")).clicked() {
+          self.delete_hook_show = false;
+          self.remove_hook_data();
+          self.hook_checksum = self.local_hook_checksum().unwrap_or(0);
+          self.dict_checksum = self.local_dict_checksum().unwrap_or(0);
+          modal.close();
+          self.toast.success(t!("Localization files successfully deleted"));
+        };
+      });
+    });
+    modal.open();
+  }
+
   pub fn update_data(&mut self) {
     let _ = self.create_dir_if_not_exist();
 
@@ -300,6 +325,13 @@ impl App {
     if let Some(pathbuf) = &self.df_dir {
       let _ = std::fs::remove_file(pathbuf.join("dfint_launcher.exe"));
       let _ = std::fs::remove_dir_all(pathbuf.join("dfint_data"));
+    }
+  }
+
+  pub fn remove_hook_data(&self) {
+    if let Some(pathbuf) = &self.df_dir {
+      let _ = std::fs::remove_file(pathbuf.join("dfhooks.dll"));
+      let _ = std::fs::remove_dir_all(pathbuf.join("dfint-data"));
     }
   }
 }
