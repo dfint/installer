@@ -3,6 +3,7 @@ pub const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 pub const GITHUB_ICON: eframe::egui::widgets::ImageSource<'static> =
   eframe::egui::include_image!("../assets/github.png");
 pub const APP_ICON: &'static [u8; 1980] = include_bytes!("../assets/df.png");
+pub const ORIGINAL_FONT: &'static [u8; 1568] = include_bytes!("../assets/original_font.png");
 
 pub const PATH_CACHE_FILE: &'static str = "./dfint-installer.cache";
 

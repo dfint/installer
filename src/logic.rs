@@ -330,6 +330,7 @@ impl App {
 
   pub fn remove_hook_data(&self) {
     if let Some(pathbuf) = &self.df_dir {
+      let _ = std::fs::write(pathbuf.join(PATH_FONT), &ORIGINAL_FONT);
       let _ = std::fs::remove_file(pathbuf.join("dfhooks.dll"));
       let _ = std::fs::remove_dir_all(pathbuf.join("dfint-data"));
     }

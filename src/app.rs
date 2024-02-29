@@ -175,7 +175,7 @@ impl eframe::App for App {
       ui.horizontal(|ui| {
         ui.heading(t!("Hook"));
         // cheksums without lozalization files
-        if self.hook_checksum != 4282505490 || self.dict_checksum != 3201258627 {
+        if self.hook_checksum != 4282505490 || self.dict_checksum != 1591420153 {
           ui.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |ui| {
             let button =
               ui.add_sized([20., 20.], egui::Button::new("🗑")).on_hover_text(t!("Delete localization files"));
