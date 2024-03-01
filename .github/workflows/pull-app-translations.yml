@@ -30,6 +30,8 @@ jobs:
     
     - name: Create Pull Request
       uses: gr2m/create-or-update-pull-request-action@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         title: Update translation file(s) of the app
         commit-message: Update translation file(s) of the app
