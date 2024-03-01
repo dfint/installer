@@ -33,5 +33,5 @@ jobs:
       with:
         title: Update translation file(s) of the app
         commit-message: Update translation file(s) of the app
-        path: locale/
+        path: locale
         delete-branch: true
