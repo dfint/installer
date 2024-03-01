@@ -1,4 +1,4 @@
-name: Push source language of the application to transifex
+name: Push App Source Language
 
 on:
     push:

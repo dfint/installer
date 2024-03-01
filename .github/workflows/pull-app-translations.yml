@@ -1,4 +1,4 @@
-name: Pull translations of the application from transifex
+name: Pull App Translations
 
 on:
   schedule:
