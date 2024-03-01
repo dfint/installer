@@ -29,9 +29,8 @@ jobs:
         ./tx pull --all --use-git-timestamps --minimum-perc 100
     
     - name: Create Pull Request
-      uses: peter-evans/create-pull-request@v6
+      uses: gr2m/create-or-update-pull-request-action@v1
       with:
         title: Update translation file(s) of the app
         commit-message: Update translation file(s) of the app
         path: locale/
-        delete-branch: true
