@@ -1,0 +1,29 @@
+name: Pull translations of the application from transifex
+
+on:
+  schedule:
+    - cron: "0 */12 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  pull_translations:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Max fetch depth (full history of files)
+
+    - name: Install transifex client
+      run: |
+        curl -o- https://raw.githubusercontent.com/transifex/cli/master/install.sh | bash
+
+    - name: Pull translations
+      env:
+        TX_TOKEN: ${{ secrets.TX_TOKEN }}
+      run: |
+        ./tx pull --all --use-git-timestamps --minimum-perc 100
