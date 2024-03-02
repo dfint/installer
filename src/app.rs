@@ -125,7 +125,7 @@ impl eframe::App for App {
         ui.hyperlink_to(t!("Report bug"), URL_BUGS);
         ui.label(format!("v{VERSION}"));
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-          egui::ComboBox::from_id_source("locale").selected_text(&self.ui_locale).width(60.).show_ui(ui, |ui| {
+          egui::ComboBox::from_id_source("locale").selected_text(&self.ui_locale).width(50.).show_ui(ui, |ui| {
             let mut lock = LOCALE.write();
             for item in lock.locales() {
               if ui.selectable_value(&mut self.ui_locale, item.clone(), item.clone()).clicked() {
@@ -266,7 +266,7 @@ impl eframe::App for App {
           if loading > 0 {
             ui.add(egui::Spinner::new().size(40.));
           } else {
-            let button = ui.add_sized([120., 40.], egui::Button::new(t!("Update")));
+            let button = ui.add_sized([130., 40.], egui::Button::new(t!("Update")));
             if button.clicked() {
               self.update_data();
             }
