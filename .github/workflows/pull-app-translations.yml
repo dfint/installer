@@ -24,6 +24,8 @@ jobs:
         TX_TOKEN: ${{ secrets.TX_TOKEN }}
       run: |
         ./tx pull --all --use-git-timestamps --minimum-perc 100
+        rm ./locale/zh-*.json
+        rm ./locale/ja.json
     
     - name: Create Pull Request
       uses: peter-evans/create-pull-request@v6
