@@ -8,7 +8,7 @@ Localization installer and updater. Installs localization for the chosen languag
 
 ## Usage
 
-- Download a package from [releases](https://img.shields.io/github/downloads/dfint/installer/latest/total): "win" for Windows or "lin" for Linux
+- Download a package from [releases](https://github.com/dfint/installer/releases/latest): "win" for Windows or "lin" for Linux
 - Unpack...
   - ...to any directory, In this case you'll need to choose the Dwarf Fortress executable in the dialog after you run `dfrus-installer`
   - ...to the DF directory, in this case the installer will find the DF executable automatically
