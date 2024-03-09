@@ -7,10 +7,18 @@ pub const ORIGINAL_FONT: &'static [u8; 1568] = include_bytes!("../assets/origina
 
 pub const PATH_CACHE_FILE: &'static str = "./dfint-installer.cache";
 
-pub const URL_HOOK_MANIFEST: &'static str =
-  "https://raw.githubusercontent.com/dfint/update-data/main/metadata/hook.json";
-pub const URL_DICT_MANIFEST: &'static str =
-  "https://raw.githubusercontent.com/dfint/update-data/main/metadata/dict.json";
+#[static_init::dynamic]
+pub static URL_HOOK_MANIFEST: String = format!(
+  "https://{}.{}.com/dfint/update-data/main/metadata/hook.json",
+  "raw", "githubusercontent"
+);
+
+#[static_init::dynamic]
+pub static URL_DICT_MANIFEST: String = format!(
+  "https://{}.{}.com/dfint/update-data/main/metadata/dict.json",
+  "raw", "githubusercontent"
+);
+
 pub const URL_BUGS: &'static str = "https://github.com/dfint/installer/issues";
 
 pub const PATH_DATA: &'static str = "dfint-data";

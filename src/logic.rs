@@ -75,7 +75,7 @@ impl App {
       self.hook_checksum = self.local_hook_checksum().unwrap_or(0);
 
       spawn!({
-        match fetch_manifest::<HookManifest>(URL_HOOK_MANIFEST) {
+        match fetch_manifest::<HookManifest>(&URL_HOOK_MANIFEST) {
           Ok(manifests) => {
             write!(vec_hook_manifests, manifests.clone());
             if let Some(manifest) = get_manifest_by_df(df_checksum, manifests) {
@@ -96,7 +96,7 @@ impl App {
       self.dict_checksum = self.local_dict_checksum().unwrap_or(0);
 
       spawn!({
-        match fetch_manifest::<DictManifest>(URL_DICT_MANIFEST) {
+        match fetch_manifest::<DictManifest>(&URL_DICT_MANIFEST) {
           Ok(manifests) => {
             write!(vec_dict_manifests, manifests.clone());
             if let Some(manifest) = get_manifest_by_language(selected_language, manifests) {
