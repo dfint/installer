@@ -29,5 +29,6 @@
   "Unable to update dictionary": "Unable to update dictionary",
   "Delete localization files": "Delete localization files",
   "Delete all localization files?": "Delete all localization files?",
-  "Localization files successfully deleted": "Localization files successfully deleted"
+  "Localization files successfully deleted": "Localization files successfully deleted",
+  "Help with translation": "Help with translation"
 }

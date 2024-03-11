@@ -123,6 +123,8 @@ impl eframe::App for App {
       ui.horizontal_centered(|ui| {
         ui.add(egui::Image::new(GITHUB_ICON.to_owned()).max_height(15.).max_width(15.));
         ui.hyperlink_to(t!("Report bug"), URL_BUGS);
+        ui.add(egui::Image::new(TRANSIFEX_ICON.to_owned()).max_height(15.).max_width(15.));
+        ui.hyperlink_to(t!("Help with translation"), URL_TRANSIFEX);
         ui.label(format!("v{VERSION}"));
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
           egui::ComboBox::from_id_source("locale").selected_text(&self.ui_locale).width(50.).show_ui(ui, |ui| {
