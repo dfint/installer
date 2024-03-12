@@ -29,5 +29,6 @@
   "Unable to update dictionary": "Ошибка при обновлении словаря",
   "Delete localization files": "Удалить файлы локализации",
   "Delete all localization files?": "Удалить все файлы локализации?",
-  "Localization files successfully deleted": "Файлы локализации успешно удалены"
+  "Localization files successfully deleted": "Файлы локализации успешно удалены",
+  "Help with translation": "Участвовать в переводе"
 }
