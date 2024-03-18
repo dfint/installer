@@ -47,7 +47,7 @@ impl Localization {
   }
 
   pub fn get(&self, s: &str) -> String {
-    self.map.get(s).unwrap_or(&"unknown key".to_owned()).to_owned()
+    self.map.get(s).unwrap_or(&String::from(s)).to_owned()
   }
 
   pub fn set(&mut self, s: &str) {
