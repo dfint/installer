@@ -17,9 +17,9 @@ Localization installer and updater. Installs localization for the chosen languag
 - Press "Update" button
 - Run the game in the usual way (run the game's executable or from the Steam client)
 
-## DFHACK
+## DFHack
 
-Currently, **df-steam-hook-rs** cannot be used while **dfhack** is installed, because the hook library is installed with the same name as dfhack library. The game can run one such library with a specific name. We are working on resolving of this problem.
+Currently, **df-steam-hook-rs** cannot be used while **DFHack** is installed, because the hook library is installed with the same name as dfhack library. The game can run one such library with a specific name. We are working on resolving of this problem.
 
 ## Adding languages for Dwarf Fortress
 
