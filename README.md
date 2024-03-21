@@ -17,6 +17,12 @@ Localization installer and updater. Installs localization for the chosen languag
 - Press "Update" button
 - Run the game in the usual way (run the game's executable or from the Steam client)
 
+## Adding languages for Dwarf Fortress
+
+If your language is missing in the dictionary drop-down list of the installer, please create an [issue](https://github.com/dfint/installer/issues).
+
+It is desirable that there is at least a translation of the title menu and some other initial screens. To add missing translations, you can join the localization project here: https://app.transifex.com/dwarf-fortress-translation/dwarf-fortress-steam/dashboard/
+
 ## Localization of the installer
 
 You can help with translation of the installer to your language: https://app.transifex.com/dwarf-fortress-translation/installer-3/
