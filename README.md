@@ -16,3 +16,9 @@ Localization installer and updater. Installs localization for the chosen languag
 - Choose localization language
 - Press "Update" button
 - Run the game in the usual way (run the game's executable or from the Steam client)
+
+## Localization of the user interface of the installer
+
+You can help with translation of the installer to your language: https://explore.transifex.com/dwarf-fortress-translation/installer-3/
+
+There are only about 40 strings to translate. Once the translation to a language is finished, it can be added to the installer and will be available in its future releases.
