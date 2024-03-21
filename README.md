@@ -21,10 +21,10 @@ Localization installer and updater. Installs localization for the chosen languag
 
 If your language is missing in the dictionary drop-down list of the installer, please create an [issue](https://github.com/dfint/installer/issues).
 
-It is desirable that there is at least a translation of the title menu and some other initial screens. To add missing translations, you can join the localization project here: https://app.transifex.com/dwarf-fortress-translation/dwarf-fortress-steam/dashboard/
+It is desirable that there is at least a translation of the title menu and some other initial screens. To add missing translations, you can join the localization project here: [translation of Dwarf Fortress 50.* on transifex.com](https://app.transifex.com/dwarf-fortress-translation/dwarf-fortress-steam/dashboard/)
 
 ## Localization of the installer
 
-You can help with translation of the installer to your language: https://app.transifex.com/dwarf-fortress-translation/installer-3/
+You can help with translation of the installer to your language: [translation of the installer on transifex.com](https://app.transifex.com/dwarf-fortress-translation/installer-3/)
 
 There are only about 40 strings to translate. Once the translation to a language is finished, it can be added to the installer and will be available in its future releases.
