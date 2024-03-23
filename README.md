@@ -4,7 +4,7 @@
 [![Total downloads of all releases](https://img.shields.io/github/downloads/dfint/installer/total)](https://github.com/dfint/installer/releases)
 [![Downloads of the latest release](https://img.shields.io/github/downloads/dfint/installer/latest/total)](https://github.com/dfint/installer/releases/latest)
 
-Localization installer and updater. Installs localization for the chosen language, installs and checks updates of the hook (new [df-steam-hook-rs](https://github.com/dfint/df-steam-hook-rs)), its configs, translations, fonts.
+Localization installer and updater for Dwarf Fortress. Installs localization for the chosen language, installs and checks updates of the hook (new [df-steam-hook-rs](https://github.com/dfint/df-steam-hook-rs)), its configs, translations, fonts.
 
 ## Usage
 
