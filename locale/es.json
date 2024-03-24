@@ -29,5 +29,6 @@
   "Unable to update dictionary": "No se puede actualizar el diccionario",
   "Delete localization files": "Eliminar archivos de localización",
   "Delete all localization files?": "¿Eliminar todos los archivos de localización?",
-  "Localization files successfully deleted": "Archivos de localización eliminados correctamente"
+  "Localization files successfully deleted": "Archivos de localización eliminados correctamente",
+  "Help with translation": "Ayudar con Traducción"
 }
