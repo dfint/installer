@@ -67,7 +67,7 @@ jobs:
           tar -czf release/dfint-installer-lin-${{ env.VERSION }}.tar.gz release/dfint-installer
 
       - name: Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: |
             release/dfint-installer-win-${{ env.VERSION }}.zip
