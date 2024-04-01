@@ -19,7 +19,7 @@ winres = "0.1"
 anyhow = "1.0.79"
 checksum = "0.2.1"
 crc32fast = "1.4.0"
-eframe = "0.23.0"
+eframe = "0.25.0"
 egui-modal = "0.2.5"
 egui-notify = "0.10.0"
 egui_extras = { version = "0.23.0", features = ["all_loaders"] }
