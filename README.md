@@ -25,7 +25,11 @@ Currently, **df-steam-hook-rs** cannot be used while **DFHack** is installed, be
 
 If your language is missing in the dictionary drop-down list of the installer, please create an [issue](https://github.com/dfint/installer/issues).
 
-It is desirable that there is at least a translation of the title menu and some other initial screens. To add missing translations, you can join the localization project here: [translation of Dwarf Fortress 50.* on transifex.com](https://app.transifex.com/dwarf-fortress-translation/dwarf-fortress-steam/dashboard/)
+It is desirable that there is at least a translation of the title menu and some other initial screens. You can participate in the translation of the game here:
+
+[![Translate_Dwarf_Fortress](https://img.shields.io/badge/Translate_Dwarf_Fortress-blue?style=for-the-badge&logo=transifex)](https://app.transifex.com/dwarf-fortress-translation/dwarf-fortress-steam)
+
+To add missing translations, you can join the localization project here: [translation of Dwarf Fortress 50.* on transifex.com](https://app.transifex.com/dwarf-fortress-translation/dwarf-fortress-steam/dashboard/)
 
 ## Localization of the installer
 
