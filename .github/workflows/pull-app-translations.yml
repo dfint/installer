@@ -26,11 +26,13 @@ jobs:
         ./tx pull --all --use-git-timestamps --minimum-perc 100
         rm -f ./locale/zh-*.json
         rm -f ./locale/ja.json
+        rm -f ./locale/ko.json
     
     - name: Create Pull Request
       uses: peter-evans/create-pull-request@v6
       with:
         title: Update translation file(s) of the app
         commit-message: Update translation file(s) of the app
+        author: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
         add-paths: locale/*
         delete-branch: true
