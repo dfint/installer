@@ -16,7 +16,7 @@ jobs:
 
     - name: Install transifex client
       run: |
-        curl -o- https://raw.githubusercontent.com/transifex/cli/master/install.sh | bash
+        curl -o- https://raw.githubusercontent.com/transifex/cli/master/install.sh | bash -s -- v1.6.10
 
     - name: Push source language
       env:
