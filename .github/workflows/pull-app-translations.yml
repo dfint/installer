@@ -24,7 +24,7 @@ jobs:
         TX_TOKEN: ${{ secrets.TX_TOKEN }}
       run: |
         ./tx pull --all --use-git-timestamps --minimum-perc 100
-        rm -f ./locale/zh-*.json
+        rm -f ./locale/zh*.json
         rm -f ./locale/ja.json
         rm -f ./locale/ko.json
     
