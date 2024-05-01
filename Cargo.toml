@@ -16,7 +16,7 @@ strip = true      # Strip symbols from binary*
 winres = "0.1"
 
 [dependencies]
-anyhow = "1.0.79"
+anyhow = "1.0.82"
 checksum = "0.2.1"
 crc32fast = "1.4.0"
 eframe = "0.23.0"
