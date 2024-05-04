@@ -55,7 +55,6 @@ impl App {
           self.df_checksum = df_checksum(&self.df_bin, self.df_os).unwrap_or(0);
           self.hook_checksum = self.local_hook_checksum().unwrap_or(0);
           self.dict_checksum = self.local_dict_checksum().unwrap_or(0);
-          // self.dfhack_installed = is_dfhack_installed(&self.df_dir);
           let manifests = read!(vec_hook_manifests).clone();
           if let Some(manifest) = get_manifest_by_df(self.df_checksum, manifests) {
             write!(hook_manifest, manifest);
