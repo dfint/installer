@@ -17,7 +17,6 @@ pub struct App {
   pub delete_hook_show: bool,
   pub on_start: bool,
   pub df_running: bool,
-  pub dfhack_installed: bool,
   pub selected_language: String,
   pub ui_locale: String,
   pub df_os: OS,
@@ -49,7 +48,6 @@ impl Default for App {
       delete_hook_show: false,
       on_start: true,
       df_running: is_df_running(),
-      dfhack_installed: is_dfhack_installed(&df_dir),
       selected_language,
       ui_locale: LOCALE.read().current_locale(),
       df_os: df_os_by_bin(&df_bin),
@@ -88,15 +86,6 @@ impl eframe::App for App {
         frame,
         "df_is_running",
         "Dwarf Fortress is running. Close it before using the installer.",
-      );
-      return;
-    }
-    if self.dfhack_installed {
-      self.guard(
-        ctx,
-        frame,
-        "dfhack_installed",
-        "An installed DFHack has been detected. Currently, DFHack and the translation cannot be used simultaneously.",
       );
       return;
     }

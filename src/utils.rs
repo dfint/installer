@@ -14,6 +14,7 @@ pub struct HookManifest {
   pub lib: String,
   pub config: String,
   pub offsets: String,
+  pub dfhooks: String,
 }
 
 #[allow(dead_code)]
@@ -136,28 +137,6 @@ pub fn is_df_running() -> bool {
   false
 }
 
-pub fn is_dfhack_installed(df_dir: &Option<PathBuf>) -> bool {
-  match df_dir {
-    Some(path) => {
-      if path.join("hack/plugins").exists() {
-        let dfhooks_data = match (path.join("dfhooks.dll").exists(), path.join("libdfhooks.so").exists()) {
-          (true, _) => std::fs::read(path.join("dfhooks.dll")).unwrap(),
-          (_, true) => std::fs::read(path.join("libdfhooks.so")).unwrap(),
-          (false, false) => vec![0],
-        };
-        if dfhooks_data.len() > 1 {
-          !contains_subsequence(b"super_secret_dfint_sign", &dfhooks_data)
-        } else {
-          false
-        }
-      } else {
-        false
-      }
-    }
-    None => false,
-  }
-}
-
 pub fn fetch_manifest<T: for<'de> serde::Deserialize<'de>>(url: &str) -> Result<Vec<T>> {
   let manifests: Vec<T> = ureq::get(url).call()?.into_json()?;
   Ok(manifests)
@@ -176,16 +155,4 @@ pub fn download_to_file(url: &str, file: &PathBuf) -> Result<()> {
   ureq::get(url).call()?.into_reader().read_to_end(&mut data)?;
   std::fs::write(file, &data)?;
   Ok(())
-}
-
-pub fn contains_subsequence(needle: &[u8], haystack: &[u8]) -> bool {
-  'outer: for i in 0..haystack.len() {
-    for j in 0..needle.len() {
-      if needle[j] != haystack[i + j] {
-        continue 'outer;
-      }
-    }
-    return true;
-  }
-  false
 }

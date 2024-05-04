@@ -55,7 +55,7 @@ impl App {
           self.df_checksum = df_checksum(&self.df_bin, self.df_os).unwrap_or(0);
           self.hook_checksum = self.local_hook_checksum().unwrap_or(0);
           self.dict_checksum = self.local_dict_checksum().unwrap_or(0);
-          self.dfhack_installed = is_dfhack_installed(&self.df_dir);
+          // self.dfhack_installed = is_dfhack_installed(&self.df_dir);
           let manifests = read!(vec_hook_manifests).clone();
           if let Some(manifest) = get_manifest_by_df(self.df_checksum, manifests) {
             write!(hook_manifest, manifest);
@@ -242,7 +242,8 @@ impl App {
 
     let hook_manifest = read!(hook_manifest).clone();
     let df_dir = self.df_dir.clone().unwrap();
-    let lib = self.get_lib_path().unwrap();
+    let lib = self.get_lib_path("dfhooks_dfint").unwrap();
+    let dfhooks = self.get_lib_path("dfhooks").unwrap();
     if hook_manifest.df == self.df_checksum && hook_manifest.checksum != self.hook_checksum {
       let loading = read!(loading);
       write!(loading, loading + 1);
@@ -250,8 +251,9 @@ impl App {
         let r1 = download_to_file(&hook_manifest.lib, &lib);
         let r2 = download_to_file(&hook_manifest.config, &df_dir.join(PATH_CONFIG));
         let r3 = download_to_file(&hook_manifest.offsets, &df_dir.join(PATH_OFFSETS));
+        let r4 = download_to_file(&hook_manifest.dfhooks, &dfhooks);
         let loading = read!(loading);
-        if r1.is_ok() && r2.is_ok() && r3.is_ok() {
+        if r1.is_ok() && r2.is_ok() && r3.is_ok() && r4.is_ok() {
           write!(recalculate_hook_checksum, true);
           success!(t!("Hook updated"));
         } else {
@@ -282,22 +284,21 @@ impl App {
     }
   }
 
-  pub fn get_lib_path(&self) -> Option<PathBuf> {
-    match (&self.df_dir, self.df_os, is_dfhack_installed(&self.df_dir)) {
-      (Some(pathbuf), OS::Windows, true) => Some(pathbuf.join("hack/plugins/dfint-hook.plug.dll")),
-      (Some(pathbuf), OS::Windows, false) => Some(pathbuf.join("dfhooks.dll")),
-      (Some(pathbuf), OS::Linux, true) => Some(pathbuf.join("hack/plugins/dfint-hook.plug.so")),
-      (Some(pathbuf), OS::Linux, false) => Some(pathbuf.join("libdfhooks.so")),
-      (_, _, _) => None,
+  pub fn get_lib_path(&self, name: &str) -> Option<PathBuf> {
+    match (&self.df_dir, self.df_os) {
+      (Some(pathbuf), OS::Windows) => Some(pathbuf.join(format!("{name}.dll"))),
+      (Some(pathbuf), OS::Linux) => Some(pathbuf.join(format!("lib{name}.so"))),
+      (_, _) => None,
     }
   }
 
   pub fn local_hook_checksum(&self) -> Result<u32> {
     match &self.df_dir {
       Some(pathbuf) => checksum_for_files(vec![
-        self.get_lib_path(),
+        self.get_lib_path("dfhooks_dfint"),
         Some(pathbuf.join(PATH_CONFIG)),
         Some(pathbuf.join(PATH_OFFSETS)),
+        self.get_lib_path("dfhooks"),
       ]),
       None => Ok(0),
     }
@@ -331,7 +332,7 @@ impl App {
   pub fn remove_hook_data(&self) {
     if let Some(pathbuf) = &self.df_dir {
       let _ = std::fs::write(pathbuf.join(PATH_FONT), &ORIGINAL_FONT);
-      let _ = std::fs::remove_file(pathbuf.join("dfhooks.dll"));
+      let _ = std::fs::remove_file(self.get_lib_path("dfhooks_dfint").unwrap());
       let _ = std::fs::remove_dir_all(pathbuf.join("dfint-data"));
     }
   }

@@ -33,6 +33,7 @@ pub static mut STATE: State = State {
     lib: "".into(),
     config: "".into(),
     offsets: "".into(),
+    dfhooks: "".into(),
   },
   vec_hook_manifests: vec![],
   dict_manifest: DictManifest {
