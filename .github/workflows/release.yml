@@ -8,6 +8,7 @@ env:
   VERSION: 0.0.1
 
 permissions:
+  contents: write
   id-token: write
   attestations: write
 
