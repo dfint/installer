@@ -7,6 +7,10 @@ env:
   CARGO_TERM_COLOR: always
   VERSION: 0.0.1
 
+permissions:
+  id-token: write
+  attestations: write
+
 jobs:
   build:
     strategy:
@@ -65,6 +69,11 @@ jobs:
           zip release/dfint-installer-win-${{ env.VERSION }}.zip release/dfint-installer.exe
           chmod +x release/dfint-installer
           tar -czf release/dfint-installer-lin-${{ env.VERSION }}.tar.gz release/dfint-installer
+
+      - name: Attestation
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: 'release/*'
 
       - name: Release
         uses: softprops/action-gh-release@v2
