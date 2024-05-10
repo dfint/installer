@@ -19,7 +19,7 @@ Localization installer and updater for Dwarf Fortress. Installs localization for
 
 ## DFHack
 
-Currently, **df-steam-hook-rs** cannot be used while **DFHack** is installed, because the hook library is installed with the same name as dfhack library. The game can run one such library with a specific name. We are working on resolving of this problem.
+DFHack (50.13r2 and newer) is supported starting from 0.2.0 version.
 
 ## Adding languages for Dwarf Fortress
 
