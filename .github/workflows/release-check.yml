@@ -8,11 +8,6 @@ jobs:
   virustotal:
     runs-on: ubuntu-latest
     steps:
-      - name: Unpack files
-        run: |
-          tar -xvf dfint-installer*.tar.gz
-          unzip dfint-installer*.zip
-
       - name: VirusTotal Scan
         uses: crazy-max/ghaction-virustotal@v4
         with:
