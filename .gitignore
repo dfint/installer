@@ -2,3 +2,4 @@
 dfint-installer.cache
 dfint-error.log
 tx
+*.pyc

@@ -85,7 +85,7 @@ impl eframe::App for App {
         ctx,
         frame,
         "df_is_running",
-        "Dwarf Fortress is running. Close it before using the installer.",
+        &t!("Dwarf Fortress is running. Close it before using the installer."),
       );
       return;
     }
