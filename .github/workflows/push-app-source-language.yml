@@ -5,7 +5,7 @@ on:
     branches: ["main"]
     paths:
       - "src/*.rs"
-      - "scripts/extract_localizable_strings.py"
+      - "scripts/extract_locale_strings.py"
       - ".github/workflows/push-app-source-language.yml"
 
 jobs:
@@ -20,7 +20,7 @@ jobs:
         uses: actions/setup-python@v5
   
       - name: Extract localizable strings
-        run: python scripts/extract_localizable_strings.py
+        run: python scripts/extract_locale_strings.py
   
       - name: Commit changes
         uses: EndBug/add-and-commit@v9.1.4
