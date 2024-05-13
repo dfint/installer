@@ -17,7 +17,6 @@
   "Unable to fetch dictionary metadata...": "Diccionario con metadaros irrecuperables...",
   "Warning": "Peligro",
   "Dwarf Fortress is running. Close it before using the installer.": "Cierre Dwarf Fortress antes de ejecutar el instalador",
-  "An installed DFHack has been detected. Currently, DFHack and the translation cannot be used simultaneously.": "Se ha detectado un DFHack instalado. Actualmente, DFHack y la traducción no se pueden usar simultáneamente.",
   "Ok": "ok",
   "Old version of translation files has been detected. It's better to delete them to avoid conflicts. Delete?": "Se ha detectado una versión de traducción antigua, es mejor borrarla para evitar conflictos, ¿desea borrarla?",
   "No": "No",
