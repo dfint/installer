@@ -619,16 +619,16 @@ checksum = "d5c24f6a463e9973db3df3c2cc276f689f5baf289c87a693dc859e004d3eb45f"
 
 [[package]]
 name = "chrono"
-version = "0.4.31"
+version = "0.4.38"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7f2c685bad3eb3d45a01354cedb7d5faa66194d1d58ba6e267a8de788f79db38"
+checksum = "a21f936df1771bf62b77f047b726c4625ff2e8aa607c01ec06e5a05bd8463401"
 dependencies = [
  "android-tzdata",
  "iana-time-zone",
  "js-sys",
  "num-traits",
  "wasm-bindgen",
- "windows-targets 0.48.5",
+ "windows-targets 0.52.0",
 ]
 
 [[package]]
@@ -827,6 +827,7 @@ version = "0.2.0"
 dependencies = [
  "anyhow",
  "checksum",
+ "chrono",
  "crc32fast",
  "eframe",
  "egui-modal",

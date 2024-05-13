@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use eframe::egui;
 use std::path::PathBuf;
 
@@ -20,6 +20,14 @@ macro_rules! spawn {
 macro_rules! error {
   ($l:expr) => {
     write!(notify, (Notification::Error, $l))
+  };
+  ($l:expr, $e:expr) => {
+    write!(notify, (Notification::Error, $l));
+    std::fs::write(
+      PATH_ERROR_FILE,
+      format!("{:?}\n{}\n{}", chrono::Local::now(), $l, $e.join("\n")),
+    )
+    .unwrap();
   };
 }
 macro_rules! success {
@@ -85,8 +93,8 @@ impl App {
               }
             }
           }
-          Err(_) => {
-            error!(t!("Unable to fetch hook metadata..."));
+          Err(err) => {
+            error!(t!("Unable to fetch hook metadata..."), vec![err.to_string()]);
           }
         }
       });
@@ -102,8 +110,8 @@ impl App {
               write!(dict_manifest, manifest);
             }
           }
-          Err(_) => {
-            error!(t!("Unable to fetch dictionary metadata..."));
+          Err(err) => {
+            error!(t!("Unable to fetch dictionary metadata..."), vec![err.to_string()]);
           }
         }
       });
@@ -256,7 +264,15 @@ impl App {
           write!(recalculate_hook_checksum, true);
           success!(t!("Hook updated"));
         } else {
-          error!(t!("Unable to update hook"));
+          error!(
+            t!("Unable to update hook"),
+            vec![
+              r1.err().unwrap_or(anyhow!("r1 no error")).to_string(),
+              r2.err().unwrap_or(anyhow!("r2 no error")).to_string(),
+              r3.err().unwrap_or(anyhow!("r3 no error")).to_string(),
+              r4.err().unwrap_or(anyhow!("r4 no error")).to_string()
+            ]
+          );
         }
         write!(loading, loading - 1);
       });
@@ -276,7 +292,14 @@ impl App {
           write!(recalculate_dict_checksum, true);
           success!(t!("Dictionary updated"));
         } else {
-          error!(t!("Unable to update dictionary"));
+          error!(
+            t!("Unable to update dictionary"),
+            vec![
+              r1.err().unwrap_or(anyhow!("r1 no error")).to_string(),
+              r2.err().unwrap_or(anyhow!("r2 no error")).to_string(),
+              r3.err().unwrap_or(anyhow!("r3 no error")).to_string()
+            ]
+          );
         }
         write!(loading, loading - 1);
       });

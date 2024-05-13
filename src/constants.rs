@@ -8,6 +8,7 @@ pub const APP_ICON: &'static [u8; 1980] = include_bytes!("../assets/df.png");
 pub const ORIGINAL_FONT: &'static [u8; 1568] = include_bytes!("../assets/original_font.png");
 
 pub const PATH_CACHE_FILE: &'static str = "./dfint-installer.cache";
+pub const PATH_ERROR_FILE: &'static str = "./dfint-error.log";
 
 pub const URL_HOOK_MANIFEST: &'static str = "https://dfint.github.io/update-data/metadata/hook_v2.json";
 pub const URL_DICT_MANIFEST: &'static str = "https://dfint.github.io/update-data/metadata/dict.json";

@@ -182,7 +182,11 @@ impl eframe::App for App {
         let hook_manifest = read!(hook_manifest).clone();
         ui.label(t!("Version"));
         ui.label(self.hook_checksum.to_string());
-        ui.label(hook_manifest.checksum.to_string());
+        if hook_manifest.checksum == 0 {
+          ui.label("?");
+        } else {
+          ui.label(hook_manifest.checksum.to_string());
+        }
         ui.label(
           match (
             hook_manifest.df == self.df_checksum,
@@ -226,7 +230,11 @@ impl eframe::App for App {
           );
           let dict_manifest = &read!(dict_manifest);
           ui.label(self.dict_checksum.to_string());
-          ui.label(dict_manifest.checksum.to_string());
+          if dict_manifest.checksum == 0 {
+            ui.label("?");
+          } else {
+            ui.label(dict_manifest.checksum.to_string());
+          }
           ui.label(
             match (
               dict_manifest.checksum == self.dict_checksum,
