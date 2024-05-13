@@ -10,13 +10,13 @@ translatable_regex = re.compile(r"\Wt!\((\".*?\")")
 
 output = dict()
 
-for file_path in source_path.rglob("**/*.rs"):
+for file_path in sorted(source_path.rglob("**/*.rs")):
     with open(file_path, encoding="utf-8") as file:
         for i, line in enumerate(file, start=1):
             results = translatable_regex.findall(line)
 
             for result in results:
-                print(f"src/{file_path.name}:{i}:", result)
+                print(f"{file_path.relative_to(project_root_path)}:{i}:", result)
                 result = ast.literal_eval(result)
                 output[result] = result
 
