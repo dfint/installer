@@ -6,6 +6,7 @@ on:
     paths:
       - "src/*.rs"
       - "scripts/extract_localizable_strings.py"
+      - "workflows/push-app-source-language.yml"
 
 jobs:
   extract:
