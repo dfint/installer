@@ -17,7 +17,6 @@
   "Unable to fetch dictionary metadata...": "Ошибка при обновлении метаданных словаря...",
   "Warning": "Внимание",
   "Dwarf Fortress is running. Close it before using the installer.": "Dwarf Fortress запущена. Закройте её перед установкой перевода.",
-  "An installed DFHack has been detected. Currently, DFHack and the translation cannot be used simultaneously.": "Обнаружен установленный DFHack. В данный момент одновременная работа DFHack и перевода не возможна.",
   "Ok": "Ок",
   "Old version of translation files has been detected. It's better to delete them to avoid conflicts. Delete?": "Обнаружены файлы старой версии перевода. Лучше удалить их, чтобы избежать конфликтов. Удалить?",
   "No": "Нет",
