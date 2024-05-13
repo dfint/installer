@@ -1,13 +1,35 @@
 name: Push App Source Language
 
 on:
-    push:
-      branches: ["main"]
-      paths:
-        - "locale/en.json"
+  push:
+    branches: ["main"]
+    paths:
+      - "src/*.rs"
 
 jobs:
+  extract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    
+    steps:
+      - uses: actions/checkout@v4
+  
+      - name: Set up Python
+        uses: actions/setup-python@v5
+  
+      - name: Extract localizable strings
+        run: python extract_localizable_strings.py
+  
+      - name: Commit changes
+        uses: EndBug/add-and-commit@v9.1.4
+        with:
+          author_name: github-actions[bot]
+          author_email: 41898282+github-actions[bot]@users.noreply.github.com
+          message: "Update dictionary manifest"
+          add: "locale/en.json"
+
   push:
+    needs: extract
     runs-on: ubuntu-latest
     timeout-minutes: 60
 
