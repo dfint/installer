@@ -182,19 +182,23 @@ impl eframe::App for App {
         let hook_manifest = read!(hook_manifest).clone();
         ui.label(t!("Version"));
         ui.label(self.hook_checksum.to_string());
+        
         if hook_manifest.checksum == 0 {
           ui.label("?");
         } else {
           ui.label(hook_manifest.checksum.to_string());
         }
+        
         ui.label(
           match (
             hook_manifest.df == self.df_checksum,
             hook_manifest.checksum == self.hook_checksum,
+            hook_manifest.checksum == 0,
           ) {
-            (true, true) => format!("✅ {}", t!("up-to-date")),
-            (true, false) => format!("⚠ {}", t!("update available")),
-            (false, _) => format!("✖ {}", t!("this DF version is not supported")),
+            (_, _, true) => format!("✖ {}", t!("hook data was not loaded")),
+            (false, _, _) => format!("✖ {}", t!("this DF version is not supported")),
+            (true, true, false) => format!("✅ {}", t!("up-to-date")),
+            (true, false, false) => format!("⚠ {}", t!("update available")),
           },
         );
         ui.end_row();
