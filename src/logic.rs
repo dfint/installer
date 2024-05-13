@@ -169,10 +169,10 @@ impl App {
       modal.show(|ui| {
         modal.title(ui, t!("Warning"));
         modal.frame(ui, |ui| {
-          modal.body_and_icon(ui, t!(text), egui_modal::Icon::Info);
+          modal.body_and_icon(ui, text, egui_modal::Icon::Info);
         });
         modal.buttons(ui, |ui| {
-          if modal.caution_button(ui, "Ok").clicked() {
+          if modal.caution_button(ui, t!("Ok")).clicked() {
             frame.close();
           };
         });
