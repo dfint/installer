@@ -11,7 +11,7 @@ Localization installer and updater for Dwarf Fortress. Installs localization for
 - Download a package from [releases](https://github.com/dfint/installer/releases/latest): "win" for Windows or "lin" for Linux
 - Unpack...
   - ...to any directory, In this case you'll need to choose the Dwarf Fortress executable in the dialog after you run `dfint-installer`
-  - ...to the DF directory, in this case the installer will find the DF executable automatically
+  - ...to the DF directory, in this case the installer will try to find the DF executable automatically
 - Run `dfint-installer`
 - Choose localization language
 - Press "Update" button
