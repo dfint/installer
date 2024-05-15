@@ -5,7 +5,11 @@ const LOCALES: Dir<'_> = include_dir!("./locale");
 
 #[static_init::dynamic]
 pub static mut LOCALE: Localization = {
-  let locale = sys_locale::get_locale().unwrap_or("en-US".to_string()).split('-').collect::<Vec<&str>>()[0].to_owned();
+  let locale = sys_locale::get_locale()
+    .unwrap_or("en-US".to_string())
+    .split('-')
+    .collect::<Vec<&str>>()[0]
+    .to_owned();
   Localization::new(locale)
 };
 
@@ -14,7 +18,13 @@ static TRANSLATIONS: HashMap<String, &'static str> = {
   let mut map = HashMap::<String, &'static str>::new();
   for file in LOCALES.files() {
     map.insert(
-      file.path().file_stem().unwrap().to_str().unwrap().to_owned(),
+      file
+        .path()
+        .file_stem()
+        .unwrap()
+        .to_str()
+        .unwrap()
+        .to_owned(),
       file.contents_utf8().unwrap(),
     );
   }

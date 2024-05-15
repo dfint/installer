@@ -237,7 +237,9 @@ impl App {
           self.hook_checksum = self.local_hook_checksum().unwrap_or(0);
           self.dict_checksum = self.local_dict_checksum().unwrap_or(0);
           modal.close();
-          self.toast.success(t!("Localization files successfully deleted"));
+          self
+            .toast
+            .success(t!("Localization files successfully deleted"));
         };
       });
     });

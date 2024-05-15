@@ -143,16 +143,25 @@ pub fn fetch_manifest<T: for<'de> serde::Deserialize<'de>>(url: &str) -> Result<
 }
 
 pub fn get_manifest_by_df(df_checksum: u32, manifests: Vec<HookManifest>) -> Option<HookManifest> {
-  manifests.iter().find(|item| item.df == df_checksum).cloned()
+  manifests
+    .iter()
+    .find(|item| item.df == df_checksum)
+    .cloned()
 }
 
 pub fn get_manifest_by_language(language: String, manifests: Vec<DictManifest>) -> Option<DictManifest> {
-  manifests.iter().find(|item| item.language == language).cloned()
+  manifests
+    .iter()
+    .find(|item| item.language == language)
+    .cloned()
 }
 
 pub fn download_to_file(url: &str, file: &PathBuf) -> Result<()> {
   let mut data: Vec<u8> = vec![];
-  ureq::get(url).call()?.into_reader().read_to_end(&mut data)?;
+  ureq::get(url)
+    .call()?
+    .into_reader()
+    .read_to_end(&mut data)?;
   std::fs::write(file, &data)?;
   Ok(())
 }

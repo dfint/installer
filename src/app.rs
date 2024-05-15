@@ -108,25 +108,41 @@ impl eframe::App for App {
 
     // UI block
     // status bar
-    egui::TopBottomPanel::bottom("status").min_height(25.).show(ctx, |ui| {
-      ui.horizontal_centered(|ui| {
-        ui.add(egui::Image::new(GITHUB_ICON.to_owned()).max_height(15.).max_width(15.));
-        ui.hyperlink_to(t!("Report bug"), URL_BUGS);
-        ui.add(egui::Image::new(TRANSIFEX_ICON.to_owned()).max_height(15.).max_width(15.));
-        ui.hyperlink_to(t!("Help with translation"), URL_TRANSIFEX);
-        ui.label(format!("v{VERSION}"));
-        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-          egui::ComboBox::from_id_source("locale").selected_text(&self.ui_locale).width(50.).show_ui(ui, |ui| {
-            let mut lock = LOCALE.write();
-            for item in lock.locales() {
-              if ui.selectable_value(&mut self.ui_locale, item.clone(), item.clone()).clicked() {
-                lock.set(&item)
-              }
-            }
+    egui::TopBottomPanel::bottom("status")
+      .min_height(25.)
+      .show(ctx, |ui| {
+        ui.horizontal_centered(|ui| {
+          ui.add(
+            egui::Image::new(GITHUB_ICON.to_owned())
+              .max_height(15.)
+              .max_width(15.),
+          );
+          ui.hyperlink_to(t!("Report bug"), URL_BUGS);
+          ui.add(
+            egui::Image::new(TRANSIFEX_ICON.to_owned())
+              .max_height(15.)
+              .max_width(15.),
+          );
+          ui.hyperlink_to(t!("Help with translation"), URL_TRANSIFEX);
+          ui.label(format!("v{VERSION}"));
+          ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+            egui::ComboBox::from_id_source("locale")
+              .selected_text(&self.ui_locale)
+              .width(50.)
+              .show_ui(ui, |ui| {
+                let mut lock = LOCALE.write();
+                for item in lock.locales() {
+                  if ui
+                    .selectable_value(&mut self.ui_locale, item.clone(), item.clone())
+                    .clicked()
+                  {
+                    lock.set(&item)
+                  }
+                }
+              });
           });
         });
       });
-    });
 
     egui::CentralPanel::default().show(ctx, |ui| {
       ui.add_space(5.);
@@ -168,8 +184,9 @@ impl eframe::App for App {
         // cheksums without lozalization files
         if self.hook_checksum != 4282505490 || self.dict_checksum != 1591420153 {
           ui.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |ui| {
-            let button =
-              ui.add_sized([20., 20.], egui::Button::new("🗑")).on_hover_text(t!("Delete localization files"));
+            let button = ui
+              .add_sized([20., 20.], egui::Button::new("🗑"))
+              .on_hover_text(t!("Delete localization files"));
             if button.clicked() {
               self.delete_hook_show = true
             }
@@ -178,42 +195,51 @@ impl eframe::App for App {
       });
       ui.separator();
 
-      egui::Grid::new("hook grid").num_columns(4).min_col_width(150.).spacing([5., 5.]).striped(true).show(ui, |ui| {
-        let hook_manifest = read!(hook_manifest).clone();
-        ui.label(t!("Version"));
-        ui.label(self.hook_checksum.to_string());
-        
-        if hook_manifest.checksum == 0 {
-          ui.label("?");
-        } else {
-          ui.label(hook_manifest.checksum.to_string());
-        }
-        
-        ui.label(
-          match (
-            hook_manifest.df == self.df_checksum,
-            hook_manifest.checksum == self.hook_checksum,
-            hook_manifest.checksum == 0,
-          ) {
-            (_, _, true) => format!("✖ {}", t!("hook data was not loaded")),
-            (false, _, _) => format!("✖ {}", t!("this DF version is not supported")),
-            (true, true, false) => format!("✅ {}", t!("up-to-date")),
-            (true, false, false) => format!("⚠ {}", t!("update available")),
-          },
-        );
-        ui.end_row();
-      });
+      egui::Grid::new("hook grid")
+        .num_columns(4)
+        .min_col_width(150.)
+        .spacing([5., 5.])
+        .striped(true)
+        .show(ui, |ui| {
+          let hook_manifest = read!(hook_manifest).clone();
+          ui.label(t!("Version"));
+          ui.label(self.hook_checksum.to_string());
+
+          if hook_manifest.checksum == 0 {
+            ui.label("?");
+          } else {
+            ui.label(hook_manifest.checksum.to_string());
+          }
+
+          ui.label(
+            match (
+              hook_manifest.df == self.df_checksum,
+              hook_manifest.checksum == self.hook_checksum,
+              hook_manifest.checksum == 0,
+            ) {
+              (_, _, true) => format!("✖ {}", t!("hook data was not loaded")),
+              (false, _, _) => format!("✖ {}", t!("this DF version is not supported")),
+              (true, true, false) => format!("✅ {}", t!("up-to-date")),
+              (true, false, false) => format!("⚠ {}", t!("update available")),
+            },
+          );
+          ui.end_row();
+        });
       ui.add_space(20.);
 
       ui.heading(t!("Dictionary"));
       ui.separator();
 
-      egui::Grid::new("dictionary grid").num_columns(4).min_col_width(150.).spacing([5., 5.]).striped(true).show(
-        ui,
-        |ui| {
-          egui::ComboBox::from_id_source("languages").selected_text(&self.selected_language).width(140.).show_ui(
-            ui,
-            |ui| {
+      egui::Grid::new("dictionary grid")
+        .num_columns(4)
+        .min_col_width(150.)
+        .spacing([5., 5.])
+        .striped(true)
+        .show(ui, |ui| {
+          egui::ComboBox::from_id_source("languages")
+            .selected_text(&self.selected_language)
+            .width(140.)
+            .show_ui(ui, |ui| {
               let manifests = read!(vec_dict_manifests).clone();
               for item in manifests.iter() {
                 if ui
@@ -230,8 +256,7 @@ impl eframe::App for App {
                   }
                 };
               }
-            },
-          );
+            });
           let dict_manifest = &read!(dict_manifest);
           ui.label(self.dict_checksum.to_string());
           if dict_manifest.checksum == 0 {
@@ -250,8 +275,7 @@ impl eframe::App for App {
             },
           );
           ui.end_row();
-        },
-      );
+        });
       ui.add_space(20.);
 
       let hook_manifest = read!(hook_manifest).clone();
