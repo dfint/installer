@@ -217,11 +217,12 @@ impl eframe::App for App {
               self.hook_metadata.manifest.df == self.df_checksum,
               self.hook_metadata.manifest.checksum == self.hook_checksum,
               self.hook_metadata.manifest.checksum == 0,
+              self.hook_metadata.vec_manifests.len() == 0,
             ) {
-              (_, _, true) => format!("✖ {}", t!("hook data was not loaded")),
-              (false, _, _) => format!("✖ {}", t!("this DF version is not supported")),
-              (true, true, false) => format!("✅ {}", t!("up-to-date")),
-              (true, false, false) => format!("⚠ {}", t!("update available")),
+              (_, _, true, true) => format!("✖ {}", t!("hook data was not loaded")),
+              (false, _, _, _) => format!("✖ {}", t!("this DF version is not supported")),
+              (true, true, _, _) => format!("✅ {}", t!("up-to-date")),
+              (true, false, _, _) => format!("⚠ {}", t!("update available")),
             },
           );
           ui.end_row();
