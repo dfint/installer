@@ -6,6 +6,7 @@ use crate::{
   app::App,
   constants::*,
   localization::{t, LOCALE},
+  persistent::Store,
   state::{read, write, STATE},
   utils::*,
 };
@@ -39,7 +40,7 @@ macro_rules! success {
 impl App {
   pub fn file_dialog(&self, df_dir: Option<PathBuf>) -> Option<egui_file::FileDialog> {
     let mut dialog = egui_file::FileDialog::open_file(self.opened_file.clone())
-      .filter(Box::new(|path| is_df_bin(path)))
+      .show_files_filter(Box::new(|path| is_df_bin(path)))
       .resizable(false)
       .show_rename(false)
       .show_new_folder(false)
@@ -50,10 +51,10 @@ impl App {
     Some(dialog)
   }
 
-  pub fn opened_file_dialog(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+  pub fn opened_file_dialog(&mut self, ctx: &egui::Context) {
     if let Some(dialog) = &mut self.open_file_dialog {
       if dialog.state() == egui_file::State::Closed && self.df_os == OS::None {
-        frame.close();
+        ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose)
       }
       if dialog.show(ctx).selected() {
         if let Some(file) = dialog.path() {
@@ -71,6 +72,21 @@ impl App {
         }
       }
     }
+  }
+
+  pub fn on_close(&mut self) -> bool {
+    if self.df_bin.is_some() {
+      let _ = Store {
+        df_bin: self.df_bin.clone().unwrap().as_path().display().to_string(),
+        hook_manifest: read!(hook_manifest).clone(),
+        vec_hook_manifests: read!(vec_hook_manifests).clone(),
+        dict_manifest: read!(dict_manifest).clone(),
+        vec_dict_manifests: read!(vec_dict_manifests).clone(),
+        selected_language: self.selected_language.clone(),
+      }
+      .save();
+    }
+    true
   }
 
   pub fn on_start(&mut self, ctx: &egui::Context) {
@@ -163,7 +179,7 @@ impl App {
     }
   }
 
-  pub fn guard(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame, name: &str, text: &str) {
+  pub fn guard(&mut self, ctx: &egui::Context, name: &str, text: &str) {
     egui::CentralPanel::default().show(ctx, |_ui| {
       let modal = egui_modal::Modal::new(ctx, name);
       modal.show(|ui| {
@@ -173,7 +189,7 @@ impl App {
         });
         modal.buttons(ui, |ui| {
           if modal.caution_button(ui, t!("Ok")).clicked() {
-            frame.close();
+            ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose)
           };
         });
       });

@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{anyhow, Result};
 use exe::{VecPE, PE};
-use sysinfo::{System, SystemExt};
+use sysinfo::System;
 
 #[allow(dead_code)]
 #[derive(Serialize, Deserialize, Clone)]

@@ -61,29 +61,13 @@ impl Default for App {
 }
 
 impl eframe::App for App {
-  fn on_close_event(&mut self) -> bool {
-    if self.df_bin.is_some() {
-      let _ = Store {
-        df_bin: self.df_bin.clone().unwrap().as_path().display().to_string(),
-        hook_manifest: read!(hook_manifest).clone(),
-        vec_hook_manifests: read!(vec_hook_manifests).clone(),
-        dict_manifest: read!(dict_manifest).clone(),
-        vec_dict_manifests: read!(vec_dict_manifests).clone(),
-        selected_language: self.selected_language.clone(),
-      }
-      .save();
-    }
-    true
-  }
-
-  fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+  fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
     // Logic block
 
     // guards
     if self.df_running {
       self.guard(
         ctx,
-        frame,
         "df_is_running",
         &t!("Dwarf Fortress is running. Close it before using the installer."),
       );
@@ -96,7 +80,7 @@ impl eframe::App for App {
     // pending checksums update
     self.recalculate_checksum();
     // if file dialog opened
-    self.opened_file_dialog(ctx, frame);
+    self.opened_file_dialog(ctx);
     // if delete old data dialog opened
     if self.delete_old_data_show {
       self.delete_old_hook_dialog(ctx)
@@ -105,6 +89,13 @@ impl eframe::App for App {
     if self.delete_hook_show {
       self.delete_hook_dialog(ctx)
     }
+
+    // close event
+    ctx.input(|i| {
+      if i.viewport().close_requested() {
+        self.on_close();
+      }
+    });
 
     // UI block
     // status bar

@@ -5,7 +5,7 @@ extern crate serde_derive;
 
 use anyhow::Result;
 use constants::APP_ICON;
-use eframe::{egui, IconData};
+use eframe::egui;
 
 mod app;
 mod constants;
@@ -18,9 +18,10 @@ mod utils;
 fn main() -> Result<(), eframe::Error> {
   env_logger::init();
   let options = eframe::NativeOptions {
-    initial_window_size: Some(egui::vec2(720., 450.)),
-    resizable: false,
-    icon_data: Some(IconData::try_from_png_bytes(APP_ICON).unwrap()),
+    viewport: egui::ViewportBuilder::default()
+      .with_inner_size([720., 450.])
+      .with_resizable(false)
+      .with_icon(eframe::icon_data::from_png_bytes(APP_ICON).unwrap()),
     ..Default::default()
   };
   eframe::run_native(
