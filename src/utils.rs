@@ -116,10 +116,12 @@ pub async fn download_to_file(url: String, file: PathBuf) -> Result<()> {
   Ok(())
 }
 
-// TODO: make it concurrent
 pub async fn batch_download_to_file(items: Vec<(String, PathBuf)>) -> Result<()> {
-  for item in items {
-    download_to_file(item.0, item.1).await?;
-  }
+  futures::future::join_all(
+    items
+      .iter()
+      .map(|item| download_to_file(item.0.clone(), item.1.clone())),
+  )
+  .await;
   Ok(())
 }
