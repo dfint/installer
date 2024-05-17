@@ -6,37 +6,6 @@ use anyhow::{anyhow, Result};
 use exe::{VecPE, PE};
 use sysinfo::System;
 
-#[allow(dead_code)]
-#[derive(Serialize, Deserialize, Clone)]
-pub struct HookManifest {
-  pub df: u32,
-  pub checksum: u32,
-  pub lib: String,
-  pub config: String,
-  pub offsets: String,
-  pub dfhooks: String,
-}
-
-#[allow(dead_code)]
-#[derive(Serialize, Deserialize, Clone)]
-pub struct DictManifest {
-  pub language: String,
-  pub checksum: u32,
-  pub csv: String,
-  pub font: String,
-  pub encoding: String,
-}
-
-#[allow(dead_code)]
-#[derive(Copy, Clone, PartialEq, Eq)]
-pub enum Notification {
-  None,
-  Error,
-  Warning,
-  Info,
-  Success,
-}
-
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum OS {
   None = -1,
@@ -137,31 +106,20 @@ pub fn is_df_running() -> bool {
   false
 }
 
-pub fn fetch_manifest<T: for<'de> serde::Deserialize<'de>>(url: &str) -> Result<Vec<T>> {
-  let manifests: Vec<T> = ureq::get(url).call()?.into_json()?;
-  Ok(manifests)
-}
-
-pub fn get_manifest_by_df(df_checksum: u32, manifests: Vec<HookManifest>) -> Option<HookManifest> {
-  manifests
-    .iter()
-    .find(|item| item.df == df_checksum)
-    .cloned()
-}
-
-pub fn get_manifest_by_language(language: String, manifests: Vec<DictManifest>) -> Option<DictManifest> {
-  manifests
-    .iter()
-    .find(|item| item.language == language)
-    .cloned()
-}
-
-pub fn download_to_file(url: &str, file: &PathBuf) -> Result<()> {
+pub async fn download_to_file(url: String, file: PathBuf) -> Result<()> {
   let mut data: Vec<u8> = vec![];
-  ureq::get(url)
+  ureq::get(&url)
     .call()?
     .into_reader()
     .read_to_end(&mut data)?;
   std::fs::write(file, &data)?;
+  Ok(())
+}
+
+// TODO: make it concurrent
+pub async fn batch_download_to_file(items: Vec<(String, PathBuf)>) -> Result<()> {
+  for item in items {
+    download_to_file(item.0, item.1).await?;
+  }
   Ok(())
 }

@@ -1,40 +1,32 @@
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use eframe::egui;
 use std::path::PathBuf;
 
 use crate::{
   app::App,
   constants::*,
+  dict_metadata::DictMetadata,
+  hook_metadata::HookMetadata,
   localization::{t, LOCALE},
   persistent::Store,
-  state::{read, write, STATE},
   utils::*,
 };
 
-macro_rules! spawn {
-  ($l:expr) => {
-    std::thread::spawn(move || {
-      $l;
-    });
-  };
-}
 macro_rules! error {
-  ($l:expr) => {
-    write!(notify, (Notification::Error, $l))
+  ($self:ident, $l:expr) => {
+    $self.toast.error($l);
   };
-  ($l:expr, $e:expr) => {
-    write!(notify, (Notification::Error, $l));
-    std::fs::write(
-      PATH_ERROR_FILE,
-      format!("{:?}\n{}\n{}", chrono::Local::now(), $l, $e.join("\n")),
-    )
-    .unwrap();
+  ($self:ident, $l:expr, $e:expr) => {
+    $self.toast.error($l);
+    std::fs::write(PATH_ERROR_FILE, format!("{:?}\n{}\n{}", chrono::Local::now(), $l, $e)).unwrap();
   };
 }
-macro_rules! success {
-  ($l:expr) => {
-    write!(notify, (Notification::Success, $l))
-  };
+
+pub enum Message {
+  HookMetadataLoaded(Result<HookMetadata>),
+  DictMetadataLoaded(Result<DictMetadata>),
+  HookUpdated(Result<()>),
+  DictUpdated(Result<()>),
 }
 
 impl App {
@@ -64,73 +56,93 @@ impl App {
           self.df_checksum = df_checksum(&self.df_bin, self.df_os).unwrap_or(0);
           self.hook_checksum = self.local_hook_checksum().unwrap_or(0);
           self.dict_checksum = self.local_dict_checksum().unwrap_or(0);
-          let manifests = read!(vec_hook_manifests).clone();
-          if let Some(manifest) = get_manifest_by_df(self.df_checksum, manifests) {
-            write!(hook_manifest, manifest);
-          }
+          self.hook_metadata.pick_df_checksum(self.df_checksum);
           self.delete_old_data_check();
         }
       }
     }
   }
 
-  pub fn on_close(&mut self) -> bool {
+  pub fn on_close(&mut self) {
     if self.df_bin.is_some() {
       let _ = Store {
         df_bin: self.df_bin.clone().unwrap().as_path().display().to_string(),
-        hook_manifest: read!(hook_manifest).clone(),
-        vec_hook_manifests: read!(vec_hook_manifests).clone(),
-        dict_manifest: read!(dict_manifest).clone(),
-        vec_dict_manifests: read!(vec_dict_manifests).clone(),
+        hook_manifest: self.hook_metadata.manifest.clone(),
+        vec_hook_manifests: self.hook_metadata.vec_manifests.clone(),
+        dict_manifest: self.dict_metadata.manifest.clone(),
+        vec_dict_manifests: self.dict_metadata.vec_manifests.clone(),
         selected_language: self.selected_language.clone(),
       }
       .save();
     }
-    true
+  }
+
+  pub fn update_state(&mut self) {
+    for msg in self.pool.poll() {
+      match msg {
+        Message::HookMetadataLoaded(result) => match result {
+          Ok(metadata) => {
+            self.hook_metadata = metadata;
+            if self.hook_metadata.manifest.checksum == 0 && self.df_bin.is_some() {
+              error!(self, t!("This DF version is not supported"));
+            }
+          }
+          Err(err) => {
+            error!(self, t!("Unable to fetch hook metadata..."), err.to_string());
+          }
+        },
+        Message::DictMetadataLoaded(result) => match result {
+          Ok(metadata) => {
+            self.dict_metadata = metadata;
+          }
+          Err(err) => {
+            error!(self, t!("Unable to fetch hook metadata..."), err.to_string());
+          }
+        },
+        Message::HookUpdated(result) => {
+          match result {
+            Ok(_) => {
+              self.toast.success(t!("Hook updated"));
+              self.hook_checksum = self.local_hook_checksum().unwrap_or(0)
+            }
+            Err(err) => {
+              error!(self, t!("Unable to update hook..."), err.to_string());
+            }
+          };
+          self.loading -= 1;
+        }
+        Message::DictUpdated(result) => {
+          match result {
+            Ok(_) => {
+              self.toast.success(t!("Dictionary updated"));
+              self.dict_checksum = self.local_dict_checksum().unwrap_or(0)
+            }
+            Err(err) => {
+              error!(self, t!("Unable to update dictionary"), err.to_string());
+            }
+          };
+          self.loading -= 1;
+        }
+      }
+    }
   }
 
   pub fn on_start(&mut self, ctx: &egui::Context) {
     if self.on_start {
       self.on_start = false;
 
-      let df_checksum = df_checksum(&self.df_bin, self.df_os).unwrap_or(0);
-      self.df_checksum = df_checksum;
+      self.df_checksum = df_checksum(&self.df_bin, self.df_os).unwrap_or(0);
       self.hook_checksum = self.local_hook_checksum().unwrap_or(0);
+      self.pool.execute(
+        HookMetadata::from_url(URL_HOOK_MANIFEST, Some(self.df_checksum)),
+        Message::HookMetadataLoaded,
+      );
 
-      spawn!({
-        match fetch_manifest::<HookManifest>(URL_HOOK_MANIFEST) {
-          Ok(manifests) => {
-            write!(vec_hook_manifests, manifests.clone());
-            if let Some(manifest) = get_manifest_by_df(df_checksum, manifests) {
-              write!(hook_manifest, manifest);
-            } else {
-              if df_checksum != 0 {
-                error!(t!("This DF version is not supported"));
-              }
-            }
-          }
-          Err(err) => {
-            error!(t!("Unable to fetch hook metadata..."), vec![err.to_string()]);
-          }
-        }
-      });
-
-      let selected_language = self.selected_language.clone();
       self.dict_checksum = self.local_dict_checksum().unwrap_or(0);
-
-      spawn!({
-        match fetch_manifest::<DictManifest>(URL_DICT_MANIFEST) {
-          Ok(manifests) => {
-            write!(vec_dict_manifests, manifests.clone());
-            if let Some(manifest) = get_manifest_by_language(selected_language, manifests) {
-              write!(dict_manifest, manifest);
-            }
-          }
-          Err(err) => {
-            error!(t!("Unable to fetch dictionary metadata..."), vec![err.to_string()]);
-          }
-        }
-      });
+      self.pool.execute(
+        DictMetadata::from_url(URL_DICT_MANIFEST, Some(self.selected_language.clone())),
+        Message::DictMetadataLoaded,
+      );
 
       if self.df_os == OS::None {
         egui::CentralPanel::default().show(ctx, |_ui| {
@@ -141,41 +153,6 @@ impl App {
       }
 
       self.delete_old_data_check();
-    }
-  }
-
-  pub fn notify(&mut self) {
-    let (level, message) = read!(notify).clone();
-    if level != Notification::None {
-      match level {
-        Notification::Error => {
-          self.toast.error(message);
-        }
-        Notification::Warning => {
-          self.toast.warning(message);
-        }
-        Notification::Info => {
-          self.toast.info(message);
-        }
-        Notification::Success => {
-          self.toast.success(message);
-        }
-        Notification::None => (),
-      }
-      write!(notify, (Notification::None, "".into()));
-    }
-  }
-
-  pub fn recalculate_checksum(&mut self) {
-    let hc = read!(recalculate_hook_checksum);
-    if hc {
-      write!(recalculate_hook_checksum, false);
-      self.hook_checksum = self.local_hook_checksum().unwrap_or(0);
-    }
-    let dc = read!(recalculate_dict_checksum);
-    if dc {
-      write!(recalculate_dict_checksum, false);
-      self.dict_checksum = self.local_dict_checksum().unwrap_or(0);
     }
   }
 
@@ -265,62 +242,33 @@ impl App {
   pub fn update_data(&mut self) {
     let _ = self.create_dir_if_not_exist();
 
-    let hook_manifest = read!(hook_manifest).clone();
+    let hook_manifest = self.hook_metadata.manifest.clone();
     let df_dir = self.df_dir.clone().unwrap();
-    let lib = self.get_lib_path("dfhooks_dfint").unwrap();
-    let dfhooks = self.get_lib_path("dfhooks").unwrap();
     if hook_manifest.df == self.df_checksum && hook_manifest.checksum != self.hook_checksum {
-      let loading = read!(loading);
-      write!(loading, loading + 1);
-      spawn!({
-        let r1 = download_to_file(&hook_manifest.lib, &lib);
-        let r2 = download_to_file(&hook_manifest.config, &df_dir.join(PATH_CONFIG));
-        let r3 = download_to_file(&hook_manifest.offsets, &df_dir.join(PATH_OFFSETS));
-        let r4 = download_to_file(&hook_manifest.dfhooks, &dfhooks);
-        let loading = read!(loading);
-        if r1.is_ok() && r2.is_ok() && r3.is_ok() && r4.is_ok() {
-          write!(recalculate_hook_checksum, true);
-          success!(t!("Hook updated"));
-        } else {
-          error!(
-            t!("Unable to update hook"),
-            vec![
-              r1.err().unwrap_or(anyhow!("r1 no error")).to_string(),
-              r2.err().unwrap_or(anyhow!("r2 no error")).to_string(),
-              r3.err().unwrap_or(anyhow!("r3 no error")).to_string(),
-              r4.err().unwrap_or(anyhow!("r4 no error")).to_string()
-            ]
-          );
-        }
-        write!(loading, loading - 1);
-      });
+      self.loading += 1;
+      self.pool.execute(
+        batch_download_to_file(vec![
+          (hook_manifest.lib, self.get_lib_path("dfhooks_dfint").unwrap()),
+          (hook_manifest.config, df_dir.join(PATH_CONFIG)),
+          (hook_manifest.offsets, df_dir.join(PATH_OFFSETS)),
+          (hook_manifest.dfhooks, self.get_lib_path("dfhooks").unwrap()),
+        ]),
+        Message::HookUpdated,
+      );
     }
 
-    let dict_manifest = read!(dict_manifest).clone();
+    let dict_manifest = self.dict_metadata.manifest.clone();
     let df_dir = self.df_dir.clone().unwrap();
     if dict_manifest.checksum != self.dict_checksum && self.selected_language != "None" {
-      let loading = read!(loading);
-      write!(loading, loading + 1);
-      spawn!({
-        let r1 = download_to_file(&dict_manifest.csv, &df_dir.join(PATH_DICT));
-        let r2 = download_to_file(&dict_manifest.font, &df_dir.join(PATH_FONT));
-        let r3 = download_to_file(&dict_manifest.encoding, &df_dir.join(PATH_ENCODING));
-        let loading = read!(loading);
-        if r1.is_ok() && r2.is_ok() && r3.is_ok() {
-          write!(recalculate_dict_checksum, true);
-          success!(t!("Dictionary updated"));
-        } else {
-          error!(
-            t!("Unable to update dictionary"),
-            vec![
-              r1.err().unwrap_or(anyhow!("r1 no error")).to_string(),
-              r2.err().unwrap_or(anyhow!("r2 no error")).to_string(),
-              r3.err().unwrap_or(anyhow!("r3 no error")).to_string()
-            ]
-          );
-        }
-        write!(loading, loading - 1);
-      });
+      self.loading += 1;
+      self.pool.execute(
+        batch_download_to_file(vec![
+          (dict_manifest.csv, df_dir.join(PATH_DICT)),
+          (dict_manifest.font, df_dir.join(PATH_FONT)),
+          (dict_manifest.encoding, df_dir.join(PATH_ENCODING)),
+        ]),
+        Message::DictUpdated,
+      );
     }
   }
 

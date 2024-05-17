@@ -3,19 +3,24 @@ use std::path::PathBuf;
 
 use crate::{
   constants::*,
+  dict_metadata::DictMetadata,
+  hook_metadata::HookMetadata,
   localization::{t, LOCALE},
+  logic::Message,
   persistent::Store,
-  state::{read, write, STATE},
+  thread_pool::ThreadPool,
   utils::*,
 };
 
 pub struct App {
+  pub pool: ThreadPool<Message>,
   pub toast: egui_notify::Toasts,
   pub open_file_dialog: Option<egui_file::FileDialog>,
   pub opened_file: Option<PathBuf>,
   pub delete_old_data_show: bool,
   pub delete_hook_show: bool,
   pub on_start: bool,
+  pub loading: u8,
   pub df_running: bool,
   pub selected_language: String,
   pub ui_locale: String,
@@ -25,45 +30,53 @@ pub struct App {
   pub df_checksum: u32,
   pub hook_checksum: u32,
   pub dict_checksum: u32,
+  pub hook_metadata: HookMetadata,
+  pub dict_metadata: DictMetadata,
 }
 
 impl Default for App {
   fn default() -> Self {
-    let (df_bin, selected_language) = match Store::load() {
-      Ok(store) => {
-        write!(hook_manifest, store.hook_manifest);
-        write!(dict_manifest, store.dict_manifest);
-        (Some(PathBuf::from(store.df_bin)), store.selected_language)
-      }
-      Err(_) => (scan_df(), String::from("None")),
+    let (df_bin, selected_language, hook_metadata, dict_metadata) = match Store::load() {
+      Ok(store) => (
+        Some(PathBuf::from(store.df_bin)),
+        store.selected_language,
+        HookMetadata::from_store(store.hook_manifest, store.vec_hook_manifests),
+        DictMetadata::from_store(store.dict_manifest, store.vec_dict_manifests),
+      ),
+      Err(_) => (
+        scan_df(),
+        String::from("None"),
+        HookMetadata::new(),
+        DictMetadata::new(),
+      ),
     };
 
-    let df_dir = df_dir_by_bin(&df_bin);
-
     Self {
+      pool: ThreadPool::new(),
       toast: egui_notify::Toasts::default().with_anchor(egui_notify::Anchor::BottomRight),
       open_file_dialog: None,
       opened_file: None,
       delete_old_data_show: false,
       delete_hook_show: false,
       on_start: true,
+      loading: 0,
       df_running: is_df_running(),
       selected_language,
       ui_locale: LOCALE.read().current_locale(),
       df_os: df_os_by_bin(&df_bin),
-      df_dir: df_dir,
+      df_dir: df_dir_by_bin(&df_bin),
       df_bin,
       df_checksum: 0,
       hook_checksum: 0,
       dict_checksum: 0,
+      hook_metadata,
+      dict_metadata,
     }
   }
 }
 
 impl eframe::App for App {
   fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-    // Logic block
-
     // guards
     if self.df_running {
       self.guard(
@@ -73,12 +86,10 @@ impl eframe::App for App {
       );
       return;
     }
+    // handle incoming messages from thread pool
+    self.update_state();
     // on first update (on startup)
     self.on_start(ctx);
-    // trigger pending notification
-    self.notify();
-    // pending checksums update
-    self.recalculate_checksum();
     // if file dialog opened
     self.opened_file_dialog(ctx);
     // if delete old data dialog opened
@@ -192,21 +203,20 @@ impl eframe::App for App {
         .spacing([5., 5.])
         .striped(true)
         .show(ui, |ui| {
-          let hook_manifest = read!(hook_manifest).clone();
           ui.label(t!("Version"));
           ui.label(self.hook_checksum.to_string());
 
-          if hook_manifest.checksum == 0 {
+          if self.hook_metadata.manifest.checksum == 0 {
             ui.label("?");
           } else {
-            ui.label(hook_manifest.checksum.to_string());
+            ui.label(self.hook_metadata.manifest.checksum.to_string());
           }
 
           ui.label(
             match (
-              hook_manifest.df == self.df_checksum,
-              hook_manifest.checksum == self.hook_checksum,
-              hook_manifest.checksum == 0,
+              self.hook_metadata.manifest.df == self.df_checksum,
+              self.hook_metadata.manifest.checksum == self.hook_checksum,
+              self.hook_metadata.manifest.checksum == 0,
             ) {
               (_, _, true) => format!("✖ {}", t!("hook data was not loaded")),
               (false, _, _) => format!("✖ {}", t!("this DF version is not supported")),
@@ -231,8 +241,7 @@ impl eframe::App for App {
             .selected_text(&self.selected_language)
             .width(140.)
             .show_ui(ui, |ui| {
-              let manifests = read!(vec_dict_manifests).clone();
-              for item in manifests.iter() {
+              for item in self.dict_metadata.vec_manifests.clone().iter() {
                 if ui
                   .selectable_value(
                     &mut self.selected_language,
@@ -242,22 +251,22 @@ impl eframe::App for App {
                   .clicked()
                 {
                   if self.selected_language != "None" {
-                    let manifest = get_manifest_by_language(self.selected_language.clone(), manifests.clone());
-                    write!(dict_manifest, manifest.unwrap());
+                    self
+                      .dict_metadata
+                      .pick_language(self.selected_language.clone())
                   }
                 };
               }
             });
-          let dict_manifest = &read!(dict_manifest);
           ui.label(self.dict_checksum.to_string());
-          if dict_manifest.checksum == 0 {
+          if self.dict_metadata.manifest.checksum == 0 {
             ui.label("?");
           } else {
-            ui.label(dict_manifest.checksum.to_string());
+            ui.label(self.dict_metadata.manifest.checksum.to_string());
           }
           ui.label(
             match (
-              dict_manifest.checksum == self.dict_checksum,
+              self.dict_metadata.manifest.checksum == self.dict_checksum,
               self.selected_language == "None",
             ) {
               (true, false) => format!("✅ {}", t!("up-to-date")),
@@ -269,19 +278,16 @@ impl eframe::App for App {
         });
       ui.add_space(20.);
 
-      let hook_manifest = read!(hook_manifest).clone();
-      let dict_manifest = read!(dict_manifest).clone();
-
-      if (hook_manifest.df == self.df_checksum && hook_manifest.checksum != self.hook_checksum)
-        || (dict_manifest.checksum != self.dict_checksum && self.selected_language != "None")
+      if (self.hook_metadata.manifest.df == self.df_checksum
+        && self.hook_metadata.manifest.checksum != self.hook_checksum)
+        || (self.dict_metadata.manifest.checksum != self.dict_checksum && self.selected_language != "None")
       {
         ui.style_mut().text_styles.insert(
           egui::TextStyle::Button,
           egui::FontId::new(20., eframe::epaint::FontFamily::Proportional),
         );
         ui.vertical_centered(|ui| {
-          let loading = read!(loading);
-          if loading > 0 {
+          if self.loading > 0 {
             ui.add(egui::Spinner::new().size(40.));
           } else {
             let button = ui.add_sized([130., 40.], egui::Button::new(t!("Update")));

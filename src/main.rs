@@ -9,10 +9,12 @@ use eframe::egui;
 
 mod app;
 mod constants;
+mod dict_metadata;
+mod hook_metadata;
 mod localization;
 mod logic;
 mod persistent;
-mod state;
+mod thread_pool;
 mod utils;
 
 fn main() -> Result<(), eframe::Error> {
