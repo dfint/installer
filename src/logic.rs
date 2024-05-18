@@ -46,7 +46,7 @@ impl App {
   pub fn opened_file_dialog(&mut self, ctx: &egui::Context) {
     if let Some(dialog) = &mut self.open_file_dialog {
       if dialog.state() == egui_file::State::Closed && self.df_os == OS::None {
-        ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose)
+        ctx.send_viewport_cmd(egui::ViewportCommand::Close)
       }
       if dialog.show(ctx).selected() {
         if let Some(file) = dialog.path() {
@@ -166,8 +166,8 @@ impl App {
         });
         modal.buttons(ui, |ui| {
           if modal.caution_button(ui, t!("Ok")).clicked() {
-            ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose)
-          };
+            ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+          }
         });
       });
       modal.open();

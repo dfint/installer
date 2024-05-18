@@ -83,6 +83,14 @@ impl Default for App {
 
 impl eframe::App for App {
   fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+    // handle incoming messages from thread pool
+    self.update_state();
+    // close event
+    ctx.input(|i| {
+      if i.viewport().close_requested() {
+        self.on_close();
+      }
+    });
     // guards
     if self.df_running {
       self.guard(
@@ -92,8 +100,6 @@ impl eframe::App for App {
       );
       return;
     }
-    // handle incoming messages from thread pool
-    self.update_state();
     // on first update (on startup)
     self.on_start(ctx);
     // if file dialog opened
@@ -106,13 +112,6 @@ impl eframe::App for App {
     if self.delete_hook_show {
       self.delete_hook_dialog(ctx)
     }
-
-    // close event
-    ctx.input(|i| {
-      if i.viewport().close_requested() {
-        self.on_close();
-      }
-    });
 
     // UI block
     // status bar

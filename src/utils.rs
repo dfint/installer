@@ -76,16 +76,11 @@ pub fn df_dir_by_bin(path: &Option<PathBuf>) -> Option<PathBuf> {
 
 pub fn df_os_by_bin(path: &Option<PathBuf>) -> OS {
   match path {
-    Some(pathbuf) => {
-      let p = pathbuf.as_path();
-      if p.exists() && p.file_name() == Some(OsStr::new("Dwarf Fortress.exe")) {
-        OS::Windows
-      } else if p.exists() && p.file_name() == Some(OsStr::new("dwarfort")) {
-        OS::Linux
-      } else {
-        OS::None
-      }
-    }
+    Some(pathbuf) => match (pathbuf.exists(), pathbuf.file_name()) {
+      (true, Some(s)) if s == OsStr::new("Dwarf Fortress.exe") => OS::Windows,
+      (true, Some(s)) if s == OsStr::new("dwarfort") => OS::Linux,
+      (_, _) => OS::None,
+    },
     _ => OS::None,
   }
 }
@@ -96,14 +91,11 @@ pub fn is_df_bin(path: &Path) -> bool {
 }
 
 pub fn is_df_running() -> bool {
-  let s = System::new_all();
-  for _ in s.processes_by_exact_name("Dwarf Fortress.exe") {
-    return true;
-  }
-  for _ in s.processes_by_exact_name("dwarfort") {
-    return true;
-  }
-  false
+  let processes = System::new_all();
+  processes
+    .processes_by_exact_name("Dwarf Fortress.exe")
+    .any(|_| true)
+    || processes.processes_by_exact_name("dwarfort").any(|_| true)
 }
 
 pub async fn download_to_file(url: String, file: PathBuf) -> Result<()> {
