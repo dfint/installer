@@ -40,14 +40,20 @@ impl Default for App {
       Ok(store) => (
         Some(PathBuf::from(store.df_bin)),
         store.selected_language,
-        HookMetadata::from_store(store.hook_manifest, store.vec_hook_manifests),
-        DictMetadata::from_store(store.dict_manifest, store.vec_dict_manifests),
+        HookMetadata {
+          manifest: store.hook_manifest,
+          vec_manifests: store.vec_hook_manifests,
+        },
+        DictMetadata {
+          manifest: store.dict_manifest,
+          vec_manifests: store.vec_dict_manifests,
+        },
       ),
       Err(_) => (
         scan_df(),
         String::from("None"),
-        HookMetadata::new(),
-        DictMetadata::new(),
+        HookMetadata::default(),
+        DictMetadata::default(),
       ),
     };
 

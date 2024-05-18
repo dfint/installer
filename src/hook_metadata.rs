@@ -28,14 +28,16 @@ pub struct HookMetadata {
   pub vec_manifests: Vec<Manifest>,
 }
 
-impl HookMetadata {
-  pub fn new() -> Self {
+impl Default for HookMetadata {
+  fn default() -> Self {
     Self {
       manifest: Manifest::default(),
       vec_manifests: vec![],
     }
   }
+}
 
+impl HookMetadata {
   pub async fn from_url(url: &str, pick_df_checksum: Option<u32>) -> Result<Self> {
     let manifests: Vec<Manifest> = ureq::get(url).call()?.into_json()?;
 
@@ -54,13 +56,6 @@ impl HookMetadata {
       manifest: picked,
       vec_manifests: manifests,
     })
-  }
-
-  pub fn from_store(manifest: Manifest, vec_manifests: Vec<Manifest>) -> Self {
-    Self {
-      manifest,
-      vec_manifests,
-    }
   }
 
   pub fn pick_df_checksum(&mut self, checksum: u32) {

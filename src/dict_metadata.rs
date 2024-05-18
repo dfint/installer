@@ -26,14 +26,16 @@ pub struct DictMetadata {
   pub vec_manifests: Vec<Manifest>,
 }
 
-impl DictMetadata {
-  pub fn new() -> Self {
+impl Default for DictMetadata {
+  fn default() -> Self {
     Self {
       manifest: Manifest::default(),
       vec_manifests: vec![],
     }
   }
+}
 
+impl DictMetadata {
   pub async fn from_url(url: &str, pick_language: Option<String>) -> Result<Self> {
     let manifests: Vec<Manifest> = ureq::get(url).call()?.into_json()?;
 
@@ -52,13 +54,6 @@ impl DictMetadata {
       manifest: picked,
       vec_manifests: manifests,
     })
-  }
-
-  pub fn from_store(manifest: Manifest, vec_manifests: Vec<Manifest>) -> Self {
-    Self {
-      manifest,
-      vec_manifests,
-    }
   }
 
   pub fn pick_language(&mut self, language: String) {
