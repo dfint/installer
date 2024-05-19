@@ -3,14 +3,20 @@ use std::path::PathBuf;
 
 use crate::{
   constants::*,
+  df_binary::DfBinary,
   dict_metadata::DictMetadata,
   hook_metadata::HookMetadata,
   localization::{t, LOCALE},
   logic::Message,
-  persistent::Store,
   thread_pool::ThreadPool,
-  utils::*,
 };
+
+#[derive(PartialEq)]
+pub enum State {
+  Startup,
+  Loading,
+  Idle,
+}
 
 pub struct App {
   pub pool: ThreadPool<Message>,
@@ -24,39 +30,16 @@ pub struct App {
   pub df_running: bool,
   pub selected_language: String,
   pub ui_locale: String,
-  pub df_os: OS,
-  pub df_dir: Option<PathBuf>,
-  pub df_bin: Option<PathBuf>,
-  pub df_checksum: u32,
   pub hook_checksum: u32,
   pub dict_checksum: u32,
   pub hook_metadata: HookMetadata,
   pub dict_metadata: DictMetadata,
+  pub bin: DfBinary,
+  pub state: State,
 }
 
 impl Default for App {
   fn default() -> Self {
-    let (df_bin, selected_language, hook_metadata, dict_metadata) = match Store::load() {
-      Ok(store) => (
-        Some(PathBuf::from(store.df_bin)),
-        store.selected_language,
-        HookMetadata {
-          manifest: store.hook_manifest,
-          vec_manifests: store.vec_hook_manifests,
-        },
-        DictMetadata {
-          manifest: store.dict_manifest,
-          vec_manifests: store.vec_dict_manifests,
-        },
-      ),
-      Err(_) => (
-        scan_df(),
-        String::from("None"),
-        HookMetadata::default(),
-        DictMetadata::default(),
-      ),
-    };
-
     Self {
       pool: ThreadPool::new(),
       toast: egui_notify::Toasts::default().with_anchor(egui_notify::Anchor::BottomRight),
@@ -66,17 +49,15 @@ impl Default for App {
       delete_hook_show: false,
       on_start: true,
       loading: 0,
-      df_running: is_df_running(),
-      selected_language,
+      df_running: false,
+      selected_language: "None".to_string(),
       ui_locale: LOCALE.read().current_locale(),
-      df_os: df_os_by_bin(&df_bin),
-      df_dir: df_dir_by_bin(&df_bin),
-      df_bin,
-      df_checksum: 0,
       hook_checksum: 0,
       dict_checksum: 0,
-      hook_metadata,
-      dict_metadata,
+      hook_metadata: HookMetadata::default(),
+      dict_metadata: DictMetadata::default(),
+      bin: DfBinary::default(),
+      state: State::Startup,
     }
   }
 }
@@ -101,7 +82,13 @@ impl eframe::App for App {
       return;
     }
     // on first update (on startup)
-    self.on_start(ctx);
+    if self.state == State::Startup {
+      self.on_start();
+    }
+    // if binary not picked, force to do it
+    if !self.bin.valid && self.open_file_dialog.is_none() && self.state == State::Idle {
+      self.open_file_dialog = self.file_dialog(None);
+    }
     // if file dialog opened
     self.opened_file_dialog(ctx);
     // if delete old data dialog opened
@@ -111,6 +98,16 @@ impl eframe::App for App {
     // if delete hook dialog opened
     if self.delete_hook_show {
       self.delete_hook_dialog(ctx)
+    }
+    // show loading on startup
+    if self.state != State::Idle {
+      egui::CentralPanel::default().show(ctx, |ui| {
+        ui.put(
+          egui::Rect::from_min_max([0., 0.].into(), [720., 450.].into()),
+          egui::Spinner::new().size(40.),
+        );
+      });
+      return;
     }
 
     // UI block
@@ -163,28 +160,20 @@ impl eframe::App for App {
         .striped(true)
         .show(ui, |ui| {
           ui.label(t!("Path"));
-          ui.label(match &self.df_bin {
-            Some(pathbuf) => pathbuf.as_path().display().to_string(),
-            None => "None".to_owned(),
-          });
+          ui.label(self.bin.to_string());
           if ui.small_button("🔍").clicked() {
-            let dir = self.df_dir.clone();
-            self.open_file_dialog = self.file_dialog(dir);
+            // let dir = self.df_dir.clone();
+            self.open_file_dialog = self.file_dialog(Some(self.bin.dir.clone()));
           };
           ui.end_row();
           ui.label(t!("OS"));
-          ui.label(self.df_os.to_string());
+          ui.label(self.bin.os.to_string());
           ui.end_row();
           ui.label(t!("Checksum"));
-          ui.label(format!("{:x}", self.df_checksum));
+          ui.label(format!("{:x}", self.bin.checksum));
           ui.end_row();
         });
       ui.add_space(20.);
-
-      // if binary not valid, do not render main section
-      if self.df_os == OS::None {
-        return;
-      }
 
       ui.horizontal(|ui| {
         ui.heading(t!("Hook"));
@@ -219,7 +208,7 @@ impl eframe::App for App {
 
           ui.label(
             match (
-              self.hook_metadata.manifest.df == self.df_checksum,
+              self.hook_metadata.manifest.df == self.bin.checksum,
               self.hook_metadata.manifest.checksum == self.hook_checksum,
               self.hook_metadata.manifest.checksum == 0,
               self.hook_metadata.vec_manifests.len() == 0,
@@ -284,7 +273,7 @@ impl eframe::App for App {
         });
       ui.add_space(20.);
 
-      if (self.hook_metadata.manifest.df == self.df_checksum
+      if (self.hook_metadata.manifest.df == self.bin.checksum
         && self.hook_metadata.manifest.checksum != self.hook_checksum)
         || (self.dict_metadata.manifest.checksum != self.dict_checksum && self.selected_language != "None")
       {

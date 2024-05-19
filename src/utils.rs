@@ -1,53 +1,14 @@
-use core::fmt;
-use std::ffi::OsStr;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
-use anyhow::{anyhow, Result};
-use exe::{VecPE, PE};
+use anyhow::Result;
 use sysinfo::System;
 
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum OS {
-  None = -1,
-  Linux = 0,
-  Windows = 1,
-}
-
-impl fmt::Display for OS {
-  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    match self {
-      OS::None => std::write!(f, "None"),
-      OS::Linux => std::write!(f, "Linux"),
-      OS::Windows => std::write!(f, "Windows"),
-    }
-  }
-}
-
-pub fn df_checksum(path: &Option<PathBuf>, os: OS) -> Result<u32> {
-  match (path, os) {
-    (Some(pathbuf), OS::Windows) => {
-      let pefile = VecPE::from_disk_file(pathbuf)?;
-      Ok(pefile.get_nt_headers_64()?.file_header.time_date_stamp)
-    }
-    (Some(pathbuf), OS::Linux) => Ok(crc(pathbuf)?),
-    _ => Err(anyhow!("Unknown os").into()),
-  }
-}
-
-pub fn crc(path: &PathBuf) -> Result<u32> {
-  let content = std::fs::read(path)?;
-  Ok(crc32fast::hash(&content))
-}
-
-pub fn checksum_for_files(vec: Vec<Option<PathBuf>>) -> Result<u32> {
+pub fn checksum_for_files(vec: Vec<PathBuf>) -> Result<u32> {
   let mut data: Vec<u8> = vec![];
   for file in vec {
-    match file {
-      Some(f) => match std::fs::read(f) {
-        Ok(mut c) => data.append(&mut c),
-        Err(_) => data.push(0),
-      },
-      None => data.push(0),
+    match std::fs::read(file) {
+      Ok(mut c) => data.append(&mut c),
+      Err(_) => data.push(0),
     }
   }
   Ok(crc32fast::hash(&data))
@@ -64,33 +25,7 @@ pub fn scan_df() -> Option<PathBuf> {
   pathes.iter().find(|path| path.exists()).cloned()
 }
 
-pub fn df_dir_by_bin(path: &Option<PathBuf>) -> Option<PathBuf> {
-  match path {
-    Some(pathbuf) => match pathbuf.as_path().parent() {
-      Some(parent) => Some(parent.to_path_buf()),
-      _ => None,
-    },
-    _ => None,
-  }
-}
-
-pub fn df_os_by_bin(path: &Option<PathBuf>) -> OS {
-  match path {
-    Some(pathbuf) => match (pathbuf.exists(), pathbuf.file_name()) {
-      (true, Some(s)) if s == OsStr::new("Dwarf Fortress.exe") => OS::Windows,
-      (true, Some(s)) if s == OsStr::new("dwarfort") => OS::Linux,
-      (_, _) => OS::None,
-    },
-    _ => OS::None,
-  }
-}
-
-pub fn is_df_bin(path: &Path) -> bool {
-  path.exists() && (path.file_name() == Some(OsStr::new("Dwarf Fortress.exe")))
-    || path.file_name() == Some(OsStr::new("dwarfort"))
-}
-
-pub fn is_df_running() -> bool {
+pub async fn is_df_running() -> bool {
   let processes = System::new_all();
   processes
     .processes_by_exact_name("Dwarf Fortress.exe")

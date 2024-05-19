@@ -9,6 +9,7 @@ use eframe::egui;
 
 mod app;
 mod constants;
+mod df_binary;
 mod dict_metadata;
 mod hook_metadata;
 mod localization;
