@@ -18,7 +18,10 @@
   "Open Dwarf Fortress executable": "Выберете исполняемый файл Dwarf Fortress",
   "This DF version is not supported": "Эта версия игры не поддерживается",
   "Unable to fetch hook metadata...": "Ошибка при загрузке метаданных хука...",
-  "Unable to fetch dictionary metadata...": "Ошибка при загрузке метаданных словаря...",
+  "Hook updated": "Хук обновлён",
+  "Unable to update hook...": "Не удалось обновить хук",
+  "Dictionary updated": "Словарь обновлён",
+  "Unable to update dictionary": "Ошибка при обновлении словаря",
   "Warning": "Внимание",
   "Ok": "Ок",
   "Old version of translation files has been detected. It's better to delete them to avoid conflicts. Delete?": "Обнаружены файлы старой версии перевода. Лучше удалить их, чтобы избежать конфликтов. Удалить?",
@@ -26,9 +29,5 @@
   "Yes": "Да",
   "Old files successfully deleted": "Файлы старой версии удалены",
   "Delete all localization files?": "Удалить все файлы локализации?",
-  "Localization files successfully deleted": "Файлы локализации успешно удалены",
-  "Hook updated": "Хук обновлён",
-  "Unable to update hook": "Ошибка при обновлении хука",
-  "Dictionary updated": "Словарь обновлён",
-  "Unable to update dictionary": "Ошибка при обновлении словаря"
+  "Localization files successfully deleted": "Файлы локализации успешно удалены"
 }
