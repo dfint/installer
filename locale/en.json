@@ -18,7 +18,10 @@
   "Open Dwarf Fortress executable": "Open Dwarf Fortress executable",
   "This DF version is not supported": "This DF version is not supported",
   "Unable to fetch hook metadata...": "Unable to fetch hook metadata...",
-  "Unable to fetch dictionary metadata...": "Unable to fetch dictionary metadata...",
+  "Hook updated": "Hook updated",
+  "Unable to update hook...": "Unable to update hook...",
+  "Dictionary updated": "Dictionary updated",
+  "Unable to update dictionary": "Unable to update dictionary",
   "Warning": "Warning",
   "Ok": "Ok",
   "Old version of translation files has been detected. It's better to delete them to avoid conflicts. Delete?": "Old version of translation files has been detected. It's better to delete them to avoid conflicts. Delete?",
@@ -26,9 +29,5 @@
   "Yes": "Yes",
   "Old files successfully deleted": "Old files successfully deleted",
   "Delete all localization files?": "Delete all localization files?",
-  "Localization files successfully deleted": "Localization files successfully deleted",
-  "Hook updated": "Hook updated",
-  "Unable to update hook": "Unable to update hook",
-  "Dictionary updated": "Dictionary updated",
-  "Unable to update dictionary": "Unable to update dictionary"
+  "Localization files successfully deleted": "Localization files successfully deleted"
 }
