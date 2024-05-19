@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use anyhow::Result;
-use sysinfo::System;
+use sysinfo::{Process, System};
 
 pub fn checksum_for_files(vec: Vec<PathBuf>) -> Result<u32> {
   let mut data: Vec<u8> = vec![];
@@ -26,11 +26,11 @@ pub fn scan_df() -> Option<PathBuf> {
 }
 
 pub async fn is_df_running() -> bool {
-  let processes = System::new_all();
-  processes
-    .processes_by_exact_name("Dwarf Fortress.exe")
-    .any(|_| true)
-    || processes.processes_by_exact_name("dwarfort").any(|_| true)
+  System::new_all()
+    .processes()
+    .values()
+    .find(|val: &&Process| ["Dwarf Fortress.exe", "dwarfort", "Dwarf Fortress."].contains(&val.name()))
+    .is_some()
 }
 
 pub async fn download_to_file(url: String, file: PathBuf) -> Result<()> {
