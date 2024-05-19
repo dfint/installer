@@ -32,18 +32,24 @@ impl Store {
 
   pub async fn new() -> (PathBuf, String, HookMetadata, DictMetadata) {
     match Store::load() {
-      Ok(store) => (
-        PathBuf::from(store.bin),
-        store.selected_language,
-        HookMetadata {
-          manifest: store.hook_manifest,
-          vec_manifests: store.vec_hook_manifests,
-        },
-        DictMetadata {
-          manifest: store.dict_manifest,
-          vec_manifests: store.vec_dict_manifests,
-        },
-      ),
+      Ok(store) => {
+        let mut bin = PathBuf::from(store.bin);
+        if !bin.exists() {
+          bin = scan_df().unwrap_or(std::env::current_dir().unwrap().to_path_buf());
+        }
+        (
+          bin,
+          store.selected_language,
+          HookMetadata {
+            manifest: store.hook_manifest,
+            vec_manifests: store.vec_hook_manifests,
+          },
+          DictMetadata {
+            manifest: store.dict_manifest,
+            vec_manifests: store.vec_dict_manifests,
+          },
+        )
+      }
       Err(_) => (
         scan_df().unwrap_or(std::env::current_dir().unwrap().to_path_buf()),
         String::from("None"),
