@@ -162,7 +162,6 @@ impl eframe::App for App {
           ui.label(t!("Path"));
           ui.label(self.bin.to_string());
           if ui.small_button("🔍").clicked() {
-            // let dir = self.df_dir.clone();
             self.open_file_dialog = self.file_dialog(Some(self.bin.dir.clone()));
           };
           ui.end_row();
