@@ -3,100 +3,94 @@ use std::path::PathBuf;
 
 use crate::{
   constants::*,
+  df_binary::DfBinary,
+  dict_metadata::DictMetadata,
+  hook_metadata::HookMetadata,
   localization::{t, LOCALE},
-  persistent::Store,
-  state::{read, write, STATE},
-  utils::*,
+  logic::Message,
+  thread_pool::ThreadPool,
 };
 
+#[derive(PartialEq)]
+pub enum State {
+  Startup,
+  Loading,
+  Idle,
+}
+
 pub struct App {
+  pub pool: ThreadPool<Message>,
   pub toast: egui_notify::Toasts,
   pub open_file_dialog: Option<egui_file::FileDialog>,
   pub opened_file: Option<PathBuf>,
   pub delete_old_data_show: bool,
   pub delete_hook_show: bool,
   pub on_start: bool,
+  pub loading: u8,
   pub df_running: bool,
   pub selected_language: String,
   pub ui_locale: String,
-  pub df_os: OS,
-  pub df_dir: Option<PathBuf>,
-  pub df_bin: Option<PathBuf>,
-  pub df_checksum: u32,
   pub hook_checksum: u32,
   pub dict_checksum: u32,
+  pub hook_metadata: HookMetadata,
+  pub dict_metadata: DictMetadata,
+  pub bin: DfBinary,
+  pub state: State,
 }
 
 impl Default for App {
   fn default() -> Self {
-    let (df_bin, selected_language) = match Store::load() {
-      Ok(store) => {
-        write!(hook_manifest, store.hook_manifest);
-        write!(dict_manifest, store.dict_manifest);
-        (Some(PathBuf::from(store.df_bin)), store.selected_language)
-      }
-      Err(_) => (scan_df(), String::from("None")),
-    };
-
-    let df_dir = df_dir_by_bin(&df_bin);
-
     Self {
+      pool: ThreadPool::new(),
       toast: egui_notify::Toasts::default().with_anchor(egui_notify::Anchor::BottomRight),
       open_file_dialog: None,
       opened_file: None,
       delete_old_data_show: false,
       delete_hook_show: false,
       on_start: true,
-      df_running: is_df_running(),
-      selected_language,
+      loading: 0,
+      df_running: false,
+      selected_language: "None".to_string(),
       ui_locale: LOCALE.read().current_locale(),
-      df_os: df_os_by_bin(&df_bin),
-      df_dir: df_dir,
-      df_bin,
-      df_checksum: 0,
       hook_checksum: 0,
       dict_checksum: 0,
+      hook_metadata: HookMetadata::default(),
+      dict_metadata: DictMetadata::default(),
+      bin: DfBinary::default(),
+      state: State::Startup,
     }
   }
 }
 
 impl eframe::App for App {
-  fn on_close_event(&mut self) -> bool {
-    if self.df_bin.is_some() {
-      let _ = Store {
-        df_bin: self.df_bin.clone().unwrap().as_path().display().to_string(),
-        hook_manifest: read!(hook_manifest).clone(),
-        vec_hook_manifests: read!(vec_hook_manifests).clone(),
-        dict_manifest: read!(dict_manifest).clone(),
-        vec_dict_manifests: read!(vec_dict_manifests).clone(),
-        selected_language: self.selected_language.clone(),
+  fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+    // handle incoming messages from thread pool
+    self.update_state();
+    // close event
+    ctx.input(|i| {
+      if i.viewport().close_requested() {
+        self.on_close();
       }
-      .save();
-    }
-    true
-  }
-
-  fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
-    // Logic block
-
+    });
     // guards
     if self.df_running {
       self.guard(
         ctx,
-        frame,
         "df_is_running",
         &t!("Dwarf Fortress is running. Close it before using the installer."),
       );
       return;
     }
     // on first update (on startup)
-    self.on_start(ctx);
-    // trigger pending notification
-    self.notify();
-    // pending checksums update
-    self.recalculate_checksum();
+    if self.state == State::Startup {
+      self.on_start();
+    }
+    // if binary not picked, force to do it
+    if !self.bin.valid && self.open_file_dialog.is_none() && self.state == State::Idle {
+      self.open_file_dialog = self.file_dialog(None);
+    }
     // if file dialog opened
-    self.opened_file_dialog(ctx, frame);
+    self.opened_file_dialog(ctx);
     // if delete old data dialog opened
     if self.delete_old_data_show {
       self.delete_old_hook_dialog(ctx)
@@ -104,6 +98,16 @@ impl eframe::App for App {
     // if delete hook dialog opened
     if self.delete_hook_show {
       self.delete_hook_dialog(ctx)
+    }
+    // show loading on startup
+    if self.state != State::Idle {
+      egui::CentralPanel::default().show(ctx, |ui| {
+        ui.put(
+          egui::Rect::from_min_max([0., 0.].into(), [720., 450.].into()),
+          egui::Spinner::new().size(40.),
+        );
+      });
+      return;
     }
 
     // UI block
@@ -156,28 +160,19 @@ impl eframe::App for App {
         .striped(true)
         .show(ui, |ui| {
           ui.label(t!("Path"));
-          ui.label(match &self.df_bin {
-            Some(pathbuf) => pathbuf.as_path().display().to_string(),
-            None => "None".to_owned(),
-          });
+          ui.label(self.bin.to_string());
           if ui.small_button("🔍").clicked() {
-            let dir = self.df_dir.clone();
-            self.open_file_dialog = self.file_dialog(dir);
+            self.open_file_dialog = self.file_dialog(Some(self.bin.dir.clone()));
           };
           ui.end_row();
           ui.label(t!("OS"));
-          ui.label(self.df_os.to_string());
+          ui.label(self.bin.os.to_string());
           ui.end_row();
           ui.label(t!("Checksum"));
-          ui.label(format!("{:x}", self.df_checksum));
+          ui.label(format!("{:x}", self.bin.checksum));
           ui.end_row();
         });
       ui.add_space(20.);
-
-      // if binary not valid, do not render main section
-      if self.df_os == OS::None {
-        return;
-      }
 
       ui.horizontal(|ui| {
         ui.heading(t!("Hook"));
@@ -201,26 +196,26 @@ impl eframe::App for App {
         .spacing([5., 5.])
         .striped(true)
         .show(ui, |ui| {
-          let hook_manifest = read!(hook_manifest).clone();
           ui.label(t!("Version"));
           ui.label(self.hook_checksum.to_string());
 
-          if hook_manifest.checksum == 0 {
+          if self.hook_metadata.manifest.checksum == 0 {
             ui.label("?");
           } else {
-            ui.label(hook_manifest.checksum.to_string());
+            ui.label(self.hook_metadata.manifest.checksum.to_string());
           }
 
           ui.label(
             match (
-              hook_manifest.df == self.df_checksum,
-              hook_manifest.checksum == self.hook_checksum,
-              hook_manifest.checksum == 0,
+              self.hook_metadata.manifest.df == self.bin.checksum,
+              self.hook_metadata.manifest.checksum == self.hook_checksum,
+              self.hook_metadata.manifest.checksum == 0,
+              self.hook_metadata.vec_manifests.len() == 0,
             ) {
-              (_, _, true) => format!("✖ {}", t!("hook data was not loaded")),
-              (false, _, _) => format!("✖ {}", t!("this DF version is not supported")),
-              (true, true, false) => format!("✅ {}", t!("up-to-date")),
-              (true, false, false) => format!("⚠ {}", t!("update available")),
+              (_, _, true, true) => format!("✖ {}", t!("hook data was not loaded")),
+              (false, _, _, _) => format!("✖ {}", t!("this DF version is not supported")),
+              (true, true, _, _) => format!("✅ {}", t!("up-to-date")),
+              (true, false, _, _) => format!("⚠ {}", t!("update available")),
             },
           );
           ui.end_row();
@@ -240,8 +235,7 @@ impl eframe::App for App {
             .selected_text(&self.selected_language)
             .width(140.)
             .show_ui(ui, |ui| {
-              let manifests = read!(vec_dict_manifests).clone();
-              for item in manifests.iter() {
+              for item in self.dict_metadata.vec_manifests.clone().iter() {
                 if ui
                   .selectable_value(
                     &mut self.selected_language,
@@ -251,22 +245,22 @@ impl eframe::App for App {
                   .clicked()
                 {
                   if self.selected_language != "None" {
-                    let manifest = get_manifest_by_language(self.selected_language.clone(), manifests.clone());
-                    write!(dict_manifest, manifest.unwrap());
+                    self
+                      .dict_metadata
+                      .pick_language(self.selected_language.clone())
                   }
                 };
               }
             });
-          let dict_manifest = &read!(dict_manifest);
           ui.label(self.dict_checksum.to_string());
-          if dict_manifest.checksum == 0 {
+          if self.dict_metadata.manifest.checksum == 0 {
             ui.label("?");
           } else {
-            ui.label(dict_manifest.checksum.to_string());
+            ui.label(self.dict_metadata.manifest.checksum.to_string());
           }
           ui.label(
             match (
-              dict_manifest.checksum == self.dict_checksum,
+              self.dict_metadata.manifest.checksum == self.dict_checksum,
               self.selected_language == "None",
             ) {
               (true, false) => format!("✅ {}", t!("up-to-date")),
@@ -278,19 +272,16 @@ impl eframe::App for App {
         });
       ui.add_space(20.);
 
-      let hook_manifest = read!(hook_manifest).clone();
-      let dict_manifest = read!(dict_manifest).clone();
-
-      if (hook_manifest.df == self.df_checksum && hook_manifest.checksum != self.hook_checksum)
-        || (dict_manifest.checksum != self.dict_checksum && self.selected_language != "None")
+      if (self.hook_metadata.manifest.df == self.bin.checksum
+        && self.hook_metadata.manifest.checksum != self.hook_checksum)
+        || (self.dict_metadata.manifest.checksum != self.dict_checksum && self.selected_language != "None")
       {
         ui.style_mut().text_styles.insert(
           egui::TextStyle::Button,
           egui::FontId::new(20., eframe::epaint::FontFamily::Proportional),
         );
         ui.vertical_centered(|ui| {
-          let loading = read!(loading);
-          if loading > 0 {
+          if self.loading > 0 {
             ui.add(egui::Spinner::new().size(40.));
           } else {
             let button = ui.add_sized([130., 40.], egui::Button::new(t!("Update")));

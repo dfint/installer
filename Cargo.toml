@@ -9,29 +9,30 @@ opt-level = 'z'   # Optimize for size
 lto = true        # Enable link-time optimization
 codegen-units = 1 # Reduce number of codegen units to increase optimizations
 panic = 'abort'   # Abort on panic
-strip = true      # Strip symbols from binary*
-
+strip = true      # Strip symbols from binary
 
 [target.'cfg(windows)'.build-dependencies]
 winres = "0.1"
 
 [dependencies]
-anyhow = "1.0.82"
+anyhow = "1.0.83"
+async-std = "1.12.0"
 checksum = "0.2.1"
 chrono = "0.4.38"
 crc32fast = "1.4.0"
-eframe = "0.23.0"
-egui-modal = "0.2.5"
-egui-notify = "0.10.0"
-egui_extras = { version = "0.23.0", features = ["all_loaders"] }
-egui_file = "0.11.0"
+eframe = "0.27.2"
+egui-modal = "0.3.6"
+egui-notify = "0.14.0"
+egui_extras = { version = "0.27.2", features = ["all_loaders"] }
+egui_file = "0.17.0"
 env_logger = "0.11.3"
 exe = "0.5.6"
+futures = "0.3.30"
 include_dir = "0.7.3"
-serde = "1.0.199"
-serde_derive = "1.0.190"
-serde_json = "1.0.116"
+serde = "1.0.202"
+serde_derive = "1.0.202"
+serde_json = "1.0.117"
 static_init = "1.0.3"
 sys-locale = "0.3.1"
-sysinfo = "0.29.11"
+sysinfo = "0.30.12"
 ureq = { version = "2.9.7", features = ["json"] }

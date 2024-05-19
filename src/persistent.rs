@@ -1,11 +1,16 @@
 use anyhow::Result;
+use std::path::PathBuf;
 
-use crate::constants::PATH_CACHE_FILE;
-use crate::utils::{DictManifest, HookManifest};
+use crate::{
+  constants::PATH_CACHE_FILE,
+  dict_metadata::{DictMetadata, Manifest as DictManifest},
+  hook_metadata::{HookMetadata, Manifest as HookManifest},
+  utils::scan_df,
+};
 
 #[derive(Serialize, Deserialize)]
 pub struct Store {
-  pub df_bin: String,
+  pub bin: String,
   pub hook_manifest: HookManifest,
   pub vec_hook_manifests: Vec<HookManifest>,
   pub dict_manifest: DictManifest,
@@ -14,7 +19,7 @@ pub struct Store {
 }
 
 impl Store {
-  pub fn load() -> Result<Self> {
+  fn load() -> Result<Self> {
     let content = std::fs::read_to_string(PATH_CACHE_FILE)?;
     let store: Store = serde_json::from_str(&content)?;
     Ok(store)
@@ -23,5 +28,28 @@ impl Store {
   pub fn save(&self) -> Result<()> {
     let _ = std::fs::write(PATH_CACHE_FILE, serde_json::to_string_pretty(self)?)?;
     Ok(())
+  }
+
+  pub async fn new() -> (PathBuf, String, HookMetadata, DictMetadata) {
+    match Store::load() {
+      Ok(store) => (
+        PathBuf::from(store.bin),
+        store.selected_language,
+        HookMetadata {
+          manifest: store.hook_manifest,
+          vec_manifests: store.vec_hook_manifests,
+        },
+        DictMetadata {
+          manifest: store.dict_manifest,
+          vec_manifests: store.vec_dict_manifests,
+        },
+      ),
+      Err(_) => (
+        scan_df().unwrap_or(std::env::current_dir().unwrap().to_path_buf()),
+        String::from("None"),
+        HookMetadata::default(),
+        DictMetadata::default(),
+      ),
+    }
   }
 }
