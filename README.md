@@ -1,4 +1,4 @@
-# installer
+# dfint-installer
 
 [![Build](https://github.com/dfint/installer/actions/workflows/build.yml/badge.svg)](https://github.com/dfint/installer/actions/workflows/build.yml)
 [![Total downloads of all releases](https://img.shields.io/github/downloads/dfint/installer/total)](https://github.com/dfint/installer/releases)
