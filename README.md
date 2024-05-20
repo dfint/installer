@@ -29,8 +29,6 @@ It is desirable that there is at least a translation of the title menu and some 
 
 [![Translate_Dwarf_Fortress](https://img.shields.io/badge/Translate_Dwarf_Fortress-blue?style=for-the-badge&logo=transifex)](https://app.transifex.com/dwarf-fortress-translation/dwarf-fortress-steam)
 
-To add missing translations, you can join the localization project here: [translation of Dwarf Fortress 50.* on transifex.com](https://app.transifex.com/dwarf-fortress-translation/dwarf-fortress-steam/dashboard/)
-
 ## Localization of the installer
 
 You can help with translation of the installer to your language: [translation of the installer on transifex.com](https://app.transifex.com/dwarf-fortress-translation/installer-3/)
