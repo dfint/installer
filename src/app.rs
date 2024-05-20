@@ -1,4 +1,7 @@
-use eframe::egui;
+use eframe::egui::{
+  Align, Button, CentralPanel, Color32, ComboBox, Context, FontId, Grid, Image, Layout, Rect, Spinner, TextStyle,
+  TopBottomPanel,
+};
 use std::path::PathBuf;
 
 use crate::{
@@ -63,7 +66,7 @@ impl Default for App {
 }
 
 impl eframe::App for App {
-  fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+  fn update(&mut self, ctx: &Context, _frame: &mut eframe::Frame) {
     // handle incoming messages from thread pool
     self.update_state();
     // close event
@@ -101,10 +104,10 @@ impl eframe::App for App {
     }
     // show loading on startup
     if self.state != State::Idle {
-      egui::CentralPanel::default().show(ctx, |ui| {
+      CentralPanel::default().show(ctx, |ui| {
         ui.put(
-          egui::Rect::from_min_max([0., 0.].into(), [720., 450.].into()),
-          egui::Spinner::new().size(40.),
+          Rect::from_min_max([0., 0.].into(), [720., 450.].into()),
+          Spinner::new().size(40.),
         );
       });
       return;
@@ -112,25 +115,25 @@ impl eframe::App for App {
 
     // UI block
     // status bar
-    egui::TopBottomPanel::bottom("status")
+    TopBottomPanel::bottom("status")
       .min_height(25.)
       .show(ctx, |ui| {
         ui.horizontal_centered(|ui| {
           ui.add(
-            egui::Image::new(GITHUB_ICON.to_owned())
+            Image::new(GITHUB_ICON.to_owned())
               .max_height(15.)
               .max_width(15.),
           );
           ui.hyperlink_to(t!("Report bug"), URL_BUGS);
           ui.add(
-            egui::Image::new(TRANSIFEX_ICON.to_owned())
+            Image::new(TRANSIFEX_ICON.to_owned())
               .max_height(15.)
               .max_width(15.),
           );
           ui.hyperlink_to(t!("Help with translation"), URL_TRANSIFEX);
           ui.label(format!("v{VERSION}"));
-          ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            egui::ComboBox::from_id_source("locale")
+          ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+            ComboBox::from_id_source("locale")
               .selected_text(&self.ui_locale)
               .width(50.)
               .show_ui(ui, |ui| {
@@ -148,11 +151,11 @@ impl eframe::App for App {
         });
       });
 
-    egui::CentralPanel::default().show(ctx, |ui| {
+    CentralPanel::default().show(ctx, |ui| {
       ui.add_space(5.);
       ui.heading("Dwarf Fortress");
       ui.separator();
-      egui::Grid::new("executable grid")
+      Grid::new("executable grid")
         .num_columns(2)
         .min_col_width(150.)
         .max_col_width(450.)
@@ -178,9 +181,9 @@ impl eframe::App for App {
         ui.heading(t!("Hook"));
         // cheksums without lozalization files
         if self.hook_checksum != 4282505490 || self.dict_checksum != 1591420153 {
-          ui.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |ui| {
+          ui.with_layout(Layout::right_to_left(Align::TOP), |ui| {
             let button = ui
-              .add_sized([20., 20.], egui::Button::new("🗑"))
+              .add_sized([20., 20.], Button::new("🗑"))
               .on_hover_text(t!("Delete localization files"));
             if button.clicked() {
               self.delete_hook_show = true
@@ -190,7 +193,7 @@ impl eframe::App for App {
       });
       ui.separator();
 
-      egui::Grid::new("hook grid")
+      Grid::new("hook grid")
         .num_columns(4)
         .min_col_width(150.)
         .spacing([5., 5.])
@@ -205,19 +208,22 @@ impl eframe::App for App {
             ui.label(self.hook_metadata.manifest.checksum.to_string());
           }
 
-          ui.label(
-            match (
-              self.hook_metadata.manifest.df == self.bin.checksum,
-              self.hook_metadata.manifest.checksum == self.hook_checksum,
-              self.hook_metadata.manifest.checksum == 0,
-              self.hook_metadata.vec_manifests.len() == 0,
-            ) {
-              (_, _, true, true) => format!("✖ {}", t!("hook data was not loaded")),
-              (false, _, _, _) => format!("✖ {}", t!("this DF version is not supported")),
-              (true, true, _, _) => format!("✅ {}", t!("up-to-date")),
-              (true, false, _, _) => format!("⚠ {}", t!("update available")),
-            },
-          );
+          let (text, color) = match (
+            self.hook_metadata.manifest.df == self.bin.checksum,
+            self.hook_metadata.manifest.checksum == self.hook_checksum,
+            self.hook_metadata.manifest.checksum == 0,
+            self.hook_metadata.vec_manifests.len() == 0,
+          ) {
+            (_, _, true, true) => (format!("✖ {}", t!("hook data was not loaded")), Color32::LIGHT_RED),
+            (false, _, _, _) => (
+              format!("✖ {}", t!("this DF version is not supported")),
+              Color32::LIGHT_RED,
+            ),
+            (true, true, _, _) => (format!("✅ {}", t!("up-to-date")), Color32::LIGHT_GREEN),
+            (true, false, _, _) => (format!("⚠ {}", t!("update available")), Color32::from_rgb(255, 255, 90)),
+          };
+          ui.colored_label(color, text);
+
           ui.end_row();
         });
       ui.add_space(20.);
@@ -225,13 +231,13 @@ impl eframe::App for App {
       ui.heading(t!("Dictionary"));
       ui.separator();
 
-      egui::Grid::new("dictionary grid")
+      Grid::new("dictionary grid")
         .num_columns(4)
         .min_col_width(150.)
         .spacing([5., 5.])
         .striped(true)
         .show(ui, |ui| {
-          egui::ComboBox::from_id_source("languages")
+          ComboBox::from_id_source("languages")
             .selected_text(&self.selected_language)
             .width(140.)
             .show_ui(ui, |ui| {
@@ -258,16 +264,21 @@ impl eframe::App for App {
           } else {
             ui.label(self.dict_metadata.manifest.checksum.to_string());
           }
-          ui.label(
-            match (
-              self.dict_metadata.manifest.checksum == self.dict_checksum,
-              self.selected_language == "None",
-            ) {
-              (true, false) => format!("✅ {}", t!("up-to-date")),
-              (false, false) => format!("⚠ {}", t!("update available")),
-              (_, true) => format!("⚠ {}", t!("choose language")),
-            },
-          );
+
+          let (text, color) = match (
+            self.dict_metadata.manifest.checksum == self.dict_checksum,
+            self.selected_language == "None",
+            self.dict_metadata.vec_manifests.len() == 0,
+          ) {
+            (_, _, true) => (
+              format!("✖ {}", t!("dictionary data was not loaded")),
+              Color32::LIGHT_RED,
+            ),
+            (true, false, false) => (format!("✅ {}", t!("up-to-date")), Color32::LIGHT_GREEN),
+            (false, false, false) => (format!("⚠ {}", t!("update available")), Color32::from_rgb(255, 255, 90)),
+            (_, true, false) => (format!("⚠ {}", t!("choose language")), Color32::from_rgb(255, 255, 90)),
+          };
+          ui.colored_label(color, text);
           ui.end_row();
         });
       ui.add_space(20.);
@@ -277,14 +288,14 @@ impl eframe::App for App {
         || (self.dict_metadata.manifest.checksum != self.dict_checksum && self.selected_language != "None")
       {
         ui.style_mut().text_styles.insert(
-          egui::TextStyle::Button,
-          egui::FontId::new(20., eframe::epaint::FontFamily::Proportional),
+          TextStyle::Button,
+          FontId::new(20., eframe::epaint::FontFamily::Proportional),
         );
         ui.vertical_centered(|ui| {
           if self.loading > 0 {
-            ui.add(egui::Spinner::new().size(40.));
+            ui.add(Spinner::new().size(40.));
           } else {
-            let button = ui.add_sized([130., 40.], egui::Button::new(t!("Update")));
+            let button = ui.add_sized([130., 40.], Button::new(t!("Update")));
             if button.clicked() {
               self.update_data();
             }
