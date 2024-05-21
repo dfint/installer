@@ -1,6 +1,6 @@
 [package]
 name = "dfint-installer"
-version = "0.3.1"
+version = "0.3.1-test-release"
 edition = "2021"
 build = "build.rs"
 
