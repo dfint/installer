@@ -1,7 +1,7 @@
 [main]
 host = https://www.transifex.com
 
-[o:dwarf-fortress-translation:p:installer-3:r:application]
+[o:dwarf-fortress-translation:p:installer:r:application]
 file_filter = locale/<lang>.json
 source_file = locale/en.json
 source_lang = en
