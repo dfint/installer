@@ -97,6 +97,17 @@ impl App {
         Message::DictMetadataLoaded(result) => match result {
           Ok(metadata) => {
             self.dict_metadata = metadata;
+            if self.selected_language == "None" {
+              if let Some(language) = self.dict_metadata.pick_language_by_code(Some(
+                sys_locale::get_locale()
+                  .unwrap_or("en-US".to_string())
+                  .split('-')
+                  .collect::<Vec<&str>>()[0]
+                  .to_owned(),
+              )) {
+                self.selected_language = language
+              }
+            }
           }
           Err(err) => {
             error!(self, t!("Unable to fetch hook metadata..."), err.to_string());
@@ -144,6 +155,18 @@ impl App {
             Message::DictMetadataLoaded,
           );
 
+          if self.selected_language == "None" {
+            if let Some(language) = self.dict_metadata.pick_language_by_code(Some(
+              sys_locale::get_locale()
+                .unwrap_or("en-US".to_string())
+                .split('-')
+                .collect::<Vec<&str>>()[0]
+                .to_owned(),
+            )) {
+              self.selected_language = language;
+            }
+          }
+
           self.delete_old_data_show = self.delete_old_data_check();
           self.state = State::Idle;
         }
@@ -186,53 +209,64 @@ impl App {
   }
 
   pub fn delete_old_hook_dialog(&mut self, ctx: &egui::Context) {
-    let modal = egui_modal::Modal::new(ctx, "delete_old_data");
-    modal.show(|ui| {
-      modal.title(ui, t!("Warning"));
-      modal.frame(ui, |ui| {
-        modal.body_and_icon(
-          ui,
-          t!("Old version of translation files has been detected. It's better to delete them to avoid conflicts. Delete?"),
-          egui_modal::Icon::Info,
-        );
-      });
-      modal.buttons(ui, |ui| {
-        if modal.button(ui, t!("No")).clicked() {
-          self.delete_old_data_show = false;
-          modal.close();
-        };
-        if modal.suggested_button(ui, t!("Yes")).clicked() {
-          self.delete_old_data_show = false;
-          self.remove_old_data();
-          modal.close();
-          self.toast.success(t!("Old files successfully deleted"));
-        };
-      });
-    });
-    modal.open();
+    self.dialog(
+      ctx,
+      "delete_old_data",
+      "Old version of translation files has been detected. It's better to delete them to avoid conflicts. Delete?",
+      |app| {
+        app.delete_old_data_show = false;
+      },
+      |app| {
+        app.delete_old_data_show = false;
+        app.remove_old_data();
+        app.toast.success(t!("Old files successfully deleted"));
+      },
+    );
   }
 
   pub fn delete_hook_dialog(&mut self, ctx: &egui::Context) {
-    let modal = egui_modal::Modal::new(ctx, "delete_data");
+    self.dialog(
+      ctx,
+      "delete_data",
+      "Delete all localization files?",
+      |app| {
+        app.delete_hook_show = false;
+        app.selected_language = "English".to_string();
+      },
+      |app| {
+        app.delete_hook_show = false;
+        app.remove_hook_data();
+        app.hook_checksum = app.local_hook_checksum().unwrap_or(0);
+        app.dict_checksum = app.local_dict_checksum().unwrap_or(0);
+        app
+          .toast
+          .success(t!("Localization files successfully deleted"));
+      },
+    );
+  }
+
+  fn dialog(
+    &mut self,
+    ctx: &egui::Context,
+    tag: impl std::fmt::Display,
+    text: &str,
+    no: impl FnOnce(&mut App),
+    yes: impl FnOnce(&mut App),
+  ) {
+    let modal = egui_modal::Modal::new(ctx, tag);
     modal.show(|ui| {
       modal.title(ui, t!("Warning"));
       modal.frame(ui, |ui| {
-        modal.body_and_icon(ui, t!("Delete all localization files?"), egui_modal::Icon::Info);
+        modal.body_and_icon(ui, t!(text), egui_modal::Icon::Info);
       });
       modal.buttons(ui, |ui| {
         if modal.button(ui, t!("No")).clicked() {
-          self.delete_hook_show = false;
+          no(self);
           modal.close();
         };
         if modal.suggested_button(ui, t!("Yes")).clicked() {
-          self.delete_hook_show = false;
-          self.remove_hook_data();
-          self.hook_checksum = self.local_hook_checksum().unwrap_or(0);
-          self.dict_checksum = self.local_dict_checksum().unwrap_or(0);
+          yes(self);
           modal.close();
-          self
-            .toast
-            .success(t!("Localization files successfully deleted"));
         };
       });
     });

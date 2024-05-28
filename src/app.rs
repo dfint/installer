@@ -253,7 +253,7 @@ impl eframe::App for App {
                   if self.selected_language != "None" {
                     self
                       .dict_metadata
-                      .pick_language(self.selected_language.clone())
+                      .pick_language_by_name(self.selected_language.clone())
                   }
                 };
               }

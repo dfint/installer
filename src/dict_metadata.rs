@@ -7,6 +7,7 @@ pub struct Manifest {
   pub csv: String,
   pub font: String,
   pub encoding: String,
+  pub code: Option<String>,
 }
 
 impl Default for Manifest {
@@ -17,6 +18,7 @@ impl Default for Manifest {
       csv: "".to_string(),
       font: "".to_string(),
       encoding: "".to_string(),
+      code: None,
     }
   }
 }
@@ -56,7 +58,7 @@ impl DictMetadata {
     })
   }
 
-  pub fn pick_language(&mut self, language: String) {
+  pub fn pick_language_by_name(&mut self, language: String) {
     if let Some(manifest) = self
       .vec_manifests
       .iter()
@@ -64,5 +66,13 @@ impl DictMetadata {
     {
       self.manifest = manifest.clone();
     }
+  }
+
+  pub fn pick_language_by_code(&mut self, code: Option<String>) -> Option<String> {
+    if let Some(manifest) = self.vec_manifests.iter().find(|item| item.code == code) {
+      self.manifest = manifest.clone();
+      return Some(manifest.language.clone());
+    }
+    None
   }
 }
