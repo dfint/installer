@@ -212,7 +212,7 @@ impl App {
     self.dialog(
       ctx,
       "delete_old_data",
-      "Old version of translation files has been detected. It's better to delete them to avoid conflicts. Delete?",
+      t!("Old version of translation files has been detected. It's better to delete them to avoid conflicts. Delete?"),
       |app| {
         app.delete_old_data_show = false;
       },
@@ -228,7 +228,7 @@ impl App {
     self.dialog(
       ctx,
       "delete_data",
-      "Delete all localization files?",
+      t!("Delete all localization files?"),
       |app| {
         app.delete_hook_show = false;
         app.selected_language = "English".to_string();
@@ -249,7 +249,7 @@ impl App {
     &mut self,
     ctx: &egui::Context,
     tag: impl std::fmt::Display,
-    text: &str,
+    text: String,
     no: impl FnOnce(&mut App),
     yes: impl FnOnce(&mut App),
   ) {
@@ -257,7 +257,7 @@ impl App {
     modal.show(|ui| {
       modal.title(ui, t!("Warning"));
       modal.frame(ui, |ui| {
-        modal.body_and_icon(ui, t!(text), egui_modal::Icon::Info);
+        modal.body_and_icon(ui, text, egui_modal::Icon::Info);
       });
       modal.buttons(ui, |ui| {
         if modal.button(ui, t!("No")).clicked() {
