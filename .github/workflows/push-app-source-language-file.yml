@@ -1,0 +1,25 @@
+name: Push App Source Language File
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - locale/en.json
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install transifex client
+        run: |
+          curl -o- https://raw.githubusercontent.com/transifex/cli/master/install.sh | bash
+
+      - name: Push source language
+        env:
+          TX_TOKEN: ${{ secrets.TX_TOKEN }}
+        run: |
+          ./tx push --source
