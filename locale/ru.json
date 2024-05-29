@@ -26,9 +26,9 @@
   "Warning": "Внимание",
   "Ok": "Ок",
   "Old version of translation files has been detected. It's better to delete them to avoid conflicts. Delete?": "Обнаружены файлы старой версии перевода. Лучше удалить их, чтобы избежать конфликтов. Удалить?",
-  "No": "Нет",
-  "Yes": "Да",
   "Old files successfully deleted": "Файлы старой версии удалены",
   "Delete all localization files?": "Удалить все файлы локализации?",
-  "Localization files successfully deleted": "Файлы локализации успешно удалены"
+  "Localization files successfully deleted": "Файлы локализации успешно удалены",
+  "No": "Нет",
+  "Yes": "Да"
 }
