@@ -31,6 +31,6 @@ It is desirable that there is at least a translation of the title menu and some 
 
 ## Localization of the installer
 
-You can help with translation of the installer to your language: [translation of the installer on transifex.com](https://app.transifex.com/dwarf-fortress-translation/installer-3/)
+You can help with translation of the installer to your language: [translation of the installer on transifex.com](https://app.transifex.com/dwarf-fortress-translation/dfint-installer/)
 
 There are only about 40 strings to translate. Once the translation to a language is finished, it can be added to the installer and will be available in its future releases.
