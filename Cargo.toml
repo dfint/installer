@@ -25,7 +25,7 @@ egui-modal = "0.3.6"
 egui-notify = "0.14.0"
 egui_extras = { version = "0.27.2", features = ["all_loaders"] }
 egui_file = "0.17.0"
-env_logger = "0.11.3"
+env_logger = "0.11.5"
 exe = "0.5.6"
 futures = "0.3.30"
 include_dir = "0.7.4"
