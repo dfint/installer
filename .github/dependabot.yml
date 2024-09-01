@@ -8,9 +8,6 @@ updates:
       serde:
         patterns:
           - "serde*"
-      all:
-        patterns:
-          - "*"
 
   - package-ecosystem: "github-actions"
     directory: "/"
