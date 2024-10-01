@@ -27,6 +27,7 @@ jobs:
         rm -f ./locale/zh*.json
         rm -f ./locale/ja.json
         rm -f ./locale/ko.json
+        rm -f ./locale/tr.json # Not enough translation percentage of the game itself 
     
     - name: Create Pull Request
       uses: peter-evans/create-pull-request@v7
