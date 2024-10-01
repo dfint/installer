@@ -8,6 +8,10 @@ updates:
       serde:
         patterns:
           - "serde*"
+      egui:
+        patterns:
+          - "eframe"
+          - "egui*"
 
   - package-ecosystem: "github-actions"
     directory: "/"
