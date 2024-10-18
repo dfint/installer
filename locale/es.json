@@ -24,7 +24,7 @@
   "Dictionary updated": "Diccionario actualizado",
   "Unable to update dictionary": "No se puede actualizar el diccionario",
   "Warning": "Advertencia",
-  "Ok": "Ok",
+  "Ok": "Aceptar",
   "Old version of translation files has been detected. It's better to delete them to avoid conflicts. Delete?": "Se ha detectado una versión de traducción antigua, es mejor borrarla para evitar conflictos, ¿desea borrarla?",
   "Old files successfully deleted": "Archivos antiguos borrados con éxito",
   "Delete all localization files?": "¿Eliminar todos los archivos de traducción?",
