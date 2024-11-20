@@ -24,10 +24,13 @@ jobs:
         TX_TOKEN: ${{ secrets.TX_TOKEN }}
       run: |
         ./tx pull --all --use-git-timestamps --minimum-perc 100
+        # Not supported
         rm -f ./locale/zh*.json
         rm -f ./locale/ja.json
         rm -f ./locale/ko.json
-        rm -f ./locale/tr.json # Not enough translation percentage of the game itself 
+        # Not enough translation percentage of the game itself 
+        rm -f ./locale/tr.json 
+        rm -f ./locale/vi.json
     
     - name: Create Pull Request
       uses: peter-evans/create-pull-request@v7
