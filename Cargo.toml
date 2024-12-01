@@ -33,6 +33,6 @@ serde = "1.0.215"
 serde_derive = "1.0.202"
 serde_json = "1.0.133"
 static_init = "1.0.3"
-sys-locale = "0.3.1"
+sys-locale = "0.3.2"
 sysinfo = "0.30.12"
 ureq = { version = "2.10.1", features = ["json"] }
