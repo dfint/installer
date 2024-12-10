@@ -1,3 +1,5 @@
+use eframe::egui::Color32;
+
 pub const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
 pub const GITHUB_ICON: eframe::egui::widgets::ImageSource<'static> =
@@ -22,3 +24,8 @@ pub const PATH_OFFSETS: &'static str = "dfint-data/offsets.toml";
 pub const PATH_DICT: &'static str = "dfint-data/dictionary.csv";
 pub const PATH_FONT: &'static str = "data/art/curses_640x300.png";
 pub const PATH_ENCODING: &'static str = "dfint-data/encoding.toml";
+
+pub const COLOR_UP_TO_DATE: Color32 = Color32::from_rgb(67, 160, 71);
+pub const COLOR_UPDATE_AVAILABLE: Color32 = Color32::from_rgb(230, 184, 0);
+pub const COLOR_CHOOSE_LANGUAGE: Color32 = Color32::from_rgb(230, 184, 0);
+pub const COLOR_ERROR: Color32 = Color32::from_rgb(211, 47, 47);

@@ -1,5 +1,5 @@
 use eframe::egui::{
-  Align, Button, CentralPanel, Color32, ComboBox, Context, FontId, Grid, Image, Layout, Rect, Spinner, TextStyle,
+  Align, Button, CentralPanel, ComboBox, Context, FontId, Grid, Image, Layout, Rect, Spinner, TextStyle,
   TopBottomPanel,
 };
 use std::path::PathBuf;
@@ -214,13 +214,13 @@ impl eframe::App for App {
             self.hook_metadata.manifest.checksum == 0,
             self.hook_metadata.vec_manifests.len() == 0,
           ) {
-            (_, _, true, true) => (format!("✖ {}", t!("hook data was not loaded")), Color32::LIGHT_RED),
+            (_, _, true, true) => (format!("✖ {}", t!("hook data was not loaded")), COLOR_ERROR),
             (false, _, _, _) => (
               format!("✖ {}", t!("this DF version is not supported")),
-              Color32::LIGHT_RED,
+              COLOR_ERROR,
             ),
-            (true, true, _, _) => (format!("✅ {}", t!("up-to-date")), Color32::LIGHT_GREEN),
-            (true, false, _, _) => (format!("⚠ {}", t!("update available")), Color32::from_rgb(255, 255, 90)),
+            (true, true, _, _) => (format!("✅ {}", t!("up-to-date")), COLOR_UP_TO_DATE),
+            (true, false, _, _) => (format!("⚠ {}", t!("update available")), COLOR_UPDATE_AVAILABLE),
           };
           ui.colored_label(color, text);
 
@@ -272,11 +272,11 @@ impl eframe::App for App {
           ) {
             (_, _, true) => (
               format!("✖ {}", t!("dictionary data was not loaded")),
-              Color32::LIGHT_RED,
+              COLOR_ERROR,
             ),
-            (true, false, false) => (format!("✅ {}", t!("up-to-date")), Color32::LIGHT_GREEN),
-            (false, false, false) => (format!("⚠ {}", t!("update available")), Color32::from_rgb(255, 255, 90)),
-            (_, true, false) => (format!("⚠ {}", t!("choose language")), Color32::from_rgb(255, 255, 90)),
+            (true, false, false) => (format!("✅ {}", t!("up-to-date")), COLOR_UP_TO_DATE),
+            (false, false, false) => (format!("⚠ {}", t!("update available")), COLOR_UPDATE_AVAILABLE),
+            (_, true, false) => (format!("⚠ {}", t!("choose language")), COLOR_CHOOSE_LANGUAGE),
           };
           ui.colored_label(color, text);
           ui.end_row();
