@@ -73,7 +73,7 @@ jobs:
           tar -czf dfint-installer-lin-${{ env.VERSION }}.tar.gz dfint-installer
 
       - name: Attestation
-        uses: actions/attest-build-provenance@v1
+        uses: actions/attest-build-provenance@v2
         with:
           subject-path: 'release/*'
 
