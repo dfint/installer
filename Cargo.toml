@@ -15,7 +15,7 @@ strip = true      # Strip symbols from binary
 winres = "0.1"
 
 [dependencies]
-anyhow = "1.0.93"
+anyhow = "1.0.95"
 async-std = "1.13.0"
 checksum = "0.2.1"
 chrono = "0.4.38"
