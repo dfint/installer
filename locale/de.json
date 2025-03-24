@@ -27,8 +27,8 @@
   "Ok": "Ok",
   "Old version of translation files has been detected. It's better to delete them to avoid conflicts. Delete?": "Es wurde eine alte Version von Übersetzungsdateien gefunden. Es ist besser, sie zu löschen, um Konflikte zu vermeiden. Löschen?",
   "Old files successfully deleted": "Alte Dateien erfolgreich gelöscht.",
-  "Delete all localization files?": "Alle Lokalisierungsdateien löschen?",
-  "Localization files successfully deleted": "Lokalisierungsdateien erfolgreich gelöscht",
+  "Delete all localization files?": "Alle lokalen Daten löschen?",
+  "Localization files successfully deleted": "Lokale Daten erfolgreich gelöscht",
   "No": "Nein",
   "Yes": "Ja"
 }
