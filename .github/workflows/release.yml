@@ -63,7 +63,9 @@ jobs:
           path: release
 
       - name: Fetch version from Cargo.toml
-        run: echo VERSION=$(cat Cargo.toml | awk -F'"' '/^version/ {print $2}') >> $GITHUB_ENV
+        run: |
+          pipx install toml-cli
+          echo VERSION=$(toml get --toml-path Cargo.toml package.version) >> $GITHUB_ENV
 
       - name: Package files
         run: |
