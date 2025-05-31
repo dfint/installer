@@ -38,7 +38,7 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: ${{ startsWith(matrix.os, 'windows') && '1.77.2-x86_64-pc-windows-msvc' || 'stable'}}
+          toolchain: ${{ startsWith(matrix.os, 'windows') && '1.75-x86_64-pc-windows-msvc' || 'stable'}}
 
       - uses: Swatinem/rust-cache@v2
 
