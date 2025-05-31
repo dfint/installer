@@ -16,7 +16,7 @@ pub fn checksum_for_files(vec: Vec<PathBuf>) -> Result<u32> {
 
 pub fn scan_df() -> Option<PathBuf> {
   let current = std::env::current_dir().unwrap();
-  let pathes = vec![
+  let pathes = [
     current.join("Dwarf Fortress.exe"),
     current.join("dwarfort"),
     PathBuf::from("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Dwarf Fortress\\Dwarf Fortress.exe"),
@@ -29,8 +29,7 @@ pub async fn is_df_running() -> bool {
   System::new_all()
     .processes()
     .values()
-    .find(|val: &&Process| ["Dwarf Fortress.exe", "dwarfort", "Dwarf Fortress."].contains(&val.name()))
-    .is_some()
+    .any(|val: &Process| ["Dwarf Fortress.exe", "dwarfort", "Dwarf Fortress."].contains(&val.name()))
 }
 
 pub async fn download_to_file(url: String, file: PathBuf) -> Result<()> {

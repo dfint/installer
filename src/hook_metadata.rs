@@ -1,6 +1,6 @@
 use anyhow::Result;
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Default, Serialize, Deserialize, Clone)]
 pub struct Manifest {
   pub df: u32,
   pub checksum: u32,
@@ -10,31 +10,10 @@ pub struct Manifest {
   pub dfhooks: String,
 }
 
-impl Default for Manifest {
-  fn default() -> Self {
-    Self {
-      df: 0,
-      checksum: 0,
-      lib: "".to_string(),
-      config: "".to_string(),
-      offsets: "".to_string(),
-      dfhooks: "".to_string(),
-    }
-  }
-}
-
+#[derive(Default)]
 pub struct HookMetadata {
   pub manifest: Manifest,
   pub vec_manifests: Vec<Manifest>,
-}
-
-impl Default for HookMetadata {
-  fn default() -> Self {
-    Self {
-      manifest: Manifest::default(),
-      vec_manifests: vec![],
-    }
-  }
 }
 
 impl HookMetadata {

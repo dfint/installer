@@ -327,7 +327,7 @@ impl App {
   }
 
   pub fn remove_hook_data(&self) {
-    let _ = std::fs::write(self.bin.dir.join(PATH_FONT), &ORIGINAL_FONT);
+    let _ = std::fs::write(self.bin.dir.join(PATH_FONT), ORIGINAL_FONT);
     let _ = std::fs::remove_file(self.bin.lib_path.clone());
     let _ = std::fs::remove_dir_all(self.bin.dir.join("dfint-data"));
   }

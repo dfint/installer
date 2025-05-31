@@ -212,13 +212,10 @@ impl eframe::App for App {
             self.hook_metadata.manifest.df == self.bin.checksum,
             self.hook_metadata.manifest.checksum == self.hook_checksum,
             self.hook_metadata.manifest.checksum == 0,
-            self.hook_metadata.vec_manifests.len() == 0,
+            self.hook_metadata.vec_manifests.is_empty(),
           ) {
             (_, _, true, true) => (format!("✖ {}", t!("hook data was not loaded")), COLOR_ERROR),
-            (false, _, _, _) => (
-              format!("✖ {}", t!("this DF version is not supported")),
-              COLOR_ERROR,
-            ),
+            (false, _, _, _) => (format!("✖ {}", t!("this DF version is not supported")),COLOR_ERROR),
             (true, true, _, _) => (format!("✅ {}", t!("up-to-date")), COLOR_UP_TO_DATE),
             (true, false, _, _) => (format!("⚠ {}", t!("update available")), COLOR_UPDATE_AVAILABLE),
           };
@@ -249,13 +246,12 @@ impl eframe::App for App {
                     item.language.clone(),
                   )
                   .clicked()
+                  && self.selected_language != "None"
                 {
-                  if self.selected_language != "None" {
-                    self
-                      .dict_metadata
-                      .pick_language_by_name(self.selected_language.clone())
-                  }
-                };
+                  self
+                    .dict_metadata
+                    .pick_language_by_name(self.selected_language.clone())
+                }
               }
             });
           ui.label(self.dict_checksum.to_string());
@@ -268,12 +264,9 @@ impl eframe::App for App {
           let (text, color) = match (
             self.dict_metadata.manifest.checksum == self.dict_checksum,
             self.selected_language == "None",
-            self.dict_metadata.vec_manifests.len() == 0,
+            self.dict_metadata.vec_manifests.is_empty(),
           ) {
-            (_, _, true) => (
-              format!("✖ {}", t!("dictionary data was not loaded")),
-              COLOR_ERROR,
-            ),
+            (_, _, true) => (format!("✖ {}", t!("dictionary data was not loaded")), COLOR_ERROR),
             (true, false, false) => (format!("✅ {}", t!("up-to-date")), COLOR_UP_TO_DATE),
             (false, false, false) => (format!("⚠ {}", t!("update available")), COLOR_UPDATE_AVAILABLE),
             (_, true, false) => (format!("⚠ {}", t!("choose language")), COLOR_CHOOSE_LANGUAGE),
