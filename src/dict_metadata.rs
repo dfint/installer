@@ -23,18 +23,10 @@ impl Default for Manifest {
   }
 }
 
+#[derive(Default)]
 pub struct DictMetadata {
   pub manifest: Manifest,
   pub vec_manifests: Vec<Manifest>,
-}
-
-impl Default for DictMetadata {
-  fn default() -> Self {
-    Self {
-      manifest: Manifest::default(),
-      vec_manifests: vec![],
-    }
-  }
 }
 
 impl DictMetadata {
