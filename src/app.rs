@@ -21,6 +21,7 @@ pub enum State {
   Idle,
 }
 
+#[allow(dead_code)]
 pub struct App {
   pub pool: ThreadPool<Message>,
   pub toast: egui_notify::Toasts,
