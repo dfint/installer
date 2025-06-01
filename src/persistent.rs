@@ -26,7 +26,7 @@ impl Store {
   }
 
   pub fn save(&self) -> Result<()> {
-    let _ = std::fs::write(PATH_CACHE_FILE, serde_json::to_string_pretty(self)?)?;
+    std::fs::write(PATH_CACHE_FILE, serde_json::to_string_pretty(self)?)?;
     Ok(())
   }
 

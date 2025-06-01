@@ -45,7 +45,7 @@ impl Default for DfBinary {
 
 impl std::fmt::Display for DfBinary {
   fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-    std::write!(f, "{}", self.path.as_path().display().to_string())
+    std::write!(f, "{}", self.path.as_path().display())
   }
 }
 
@@ -76,7 +76,7 @@ impl DfBinary {
     }
   }
 
-  fn os(path: &PathBuf) -> OS {
+  fn os(path: &Path) -> OS {
     if path.file_name() == Some(OsStr::new("Dwarf Fortress.exe")) {
       OS::Windows
     } else {
