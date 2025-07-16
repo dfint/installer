@@ -13,9 +13,11 @@ Localization installer and updater for Dwarf Fortress. Installs localization for
   - ...to any directory, In this case you'll need to choose the Dwarf Fortress executable in the dialog after you run `dfint-installer`
   - ...to the DF directory, in this case the installer will try to find the DF executable automatically
 - Run `dfint-installer`
-- Choose localization language
+- Choose localization language in the "Dictionary" section
 - Press "Update" button
 - Run the game in the usual way (run the game's executable or from the Steam client)
+
+![Screenshot](screenshot.png)
 
 ## DFHack
 
