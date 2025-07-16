@@ -135,7 +135,7 @@ impl DfBinary {
   }
 
   pub fn detect_df_version(data: &[u8]) -> Option<String> {
-    let pattern = Regex::new(r"\x00((\d+)\.(\d+)(-beta(\d+))?)\x00").unwrap();
+    let pattern = Regex::new(r"\x00((\d+)\.(\d+)(-([^\d]+)(\d*))?)\x00").unwrap();
     let best_match = pattern
       .captures_iter(data)
       .max_by_key(|caps| DfBinary::version_comparing_key(caps))?;
