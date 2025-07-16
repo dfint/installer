@@ -1,6 +1,5 @@
 use eframe::egui::{
-  Align, Button, CentralPanel, ComboBox, Context, FontId, Grid, Image, Layout, Rect, Spinner, TextStyle,
-  TopBottomPanel,
+  Align, Button, CentralPanel, ComboBox, Context, FontId, Grid, Image, Layout, Rect, Spinner, TextStyle, TopBottomPanel,
 };
 use std::path::PathBuf;
 
@@ -9,7 +8,7 @@ use crate::{
   df_binary::DfBinary,
   dict_metadata::DictMetadata,
   hook_metadata::HookMetadata,
-  localization::{t, LOCALE},
+  localization::{LOCALE, t},
   logic::Message,
   thread_pool::ThreadPool,
 };
@@ -21,6 +20,7 @@ pub enum State {
   Idle,
 }
 
+#[allow(dead_code)]
 pub struct App {
   pub pool: ThreadPool<Message>,
   pub toast: egui_notify::Toasts,
@@ -168,8 +168,16 @@ impl eframe::App for App {
             self.open_file_dialog = self.file_dialog(Some(self.bin.dir.clone()));
           };
           ui.end_row();
-          ui.label(t!("OS"));
-          ui.label(self.bin.os.to_string());
+          ui.label(t!("Version"));
+          ui.label(format!(
+            "{} | {} | {}",
+            self.bin.version,
+            self.bin.os,
+            match self.bin.steam {
+              true => "steam",
+              false => "non-steam",
+            }
+          ));
           ui.end_row();
           ui.label(t!("Checksum"));
           ui.label(format!("{:x}", self.bin.checksum));
@@ -215,7 +223,7 @@ impl eframe::App for App {
             self.hook_metadata.vec_manifests.is_empty(),
           ) {
             (_, _, true, true) => (format!("✖ {}", t!("hook data was not loaded")), COLOR_ERROR),
-            (false, _, _, _) => (format!("✖ {}", t!("this DF version is not supported")),COLOR_ERROR),
+            (false, _, _, _) => (format!("✖ {}", t!("this DF version is not supported")), COLOR_ERROR),
             (true, true, _, _) => (format!("✅ {}", t!("up-to-date")), COLOR_UP_TO_DATE),
             (true, false, _, _) => (format!("⚠ {}", t!("update available")), COLOR_UPDATE_AVAILABLE),
           };
