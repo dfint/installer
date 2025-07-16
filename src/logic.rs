@@ -143,7 +143,7 @@ impl App {
               error!(
                 self,
                 match is_permission_denied {
-                  true => t!("Permission denied, check if the directory and files is writable"),
+                  true => t!("Permission denied, check if the directory and files are writable"),
                   false => t!("Unable to update dictionary"),
                 },
                 err.to_string()
