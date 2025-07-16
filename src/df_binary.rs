@@ -127,7 +127,7 @@ impl DfBinary {
     let minor = parse_group(3);
 
     let beta = caps
-      .get(5)
+      .get(6)
       .map(|m| std::str::from_utf8(m.as_bytes()).unwrap().parse().unwrap())
       .unwrap_or(MAX_BETA);
 
