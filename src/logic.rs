@@ -9,7 +9,7 @@ use crate::{
   df_binary::DfBinary,
   dict_metadata::DictMetadata,
   hook_metadata::HookMetadata,
-  localization::{t, LOCALE},
+  localization::{LOCALE, t},
   persistent::Store,
   utils::*,
 };
@@ -132,7 +132,22 @@ impl App {
               self.dict_checksum = self.local_dict_checksum().unwrap_or(0)
             }
             Err(err) => {
-              error!(self, t!("Unable to update dictionary"), err.to_string());
+              let is_permission_denied = err.chain().any(|cause| {
+                if let Some(io_err) = cause.downcast_ref::<std::io::Error>() {
+                  io_err.kind() == std::io::ErrorKind::PermissionDenied
+                } else {
+                  false
+                }
+              });
+
+              error!(
+                self,
+                match is_permission_denied {
+                  true => t!("Permission denied, check if the directory and files is writable"),
+                  false => t!("Unable to update dictionary"),
+                },
+                err.to_string()
+              );
             }
           };
           self.loading -= 1;

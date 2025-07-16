@@ -22,6 +22,7 @@
   "Unable to update hook...": "Unable to update hook...",
   "Dictionary updated": "Dictionary updated",
   "Unable to update dictionary": "Unable to update dictionary",
+  "Permission denied, check if the directory and files is writable": "Permission denied, check if the directory and files is writable",
   "Warning": "Warning",
   "Ok": "Ok",
   "Old version of translation files has been detected. It's better to delete them to avoid conflicts. Delete?": "Old version of translation files has been detected. It's better to delete them to avoid conflicts. Delete?",
