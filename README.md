@@ -20,9 +20,11 @@ Localization installer and updater for Dwarf Fortress. Installs localization for
 
 ![Screenshot](screenshot.png)
 
-## DFHack
+## DFHack compatibility
 
-Starting from 0.2.0 version, the installer is compatible with DFHack ([50.13-r2](https://github.com/DFHack/dfhack/releases/tag/50.13-r2) and newer).
+Starting from 0.2.0 version, the installer can be used along with with DFHack ([50.13-r2](https://github.com/DFHack/dfhack/releases/tag/50.13-r2) and newer).
+
+However, there could be hidden incompatibilities because DFHack itself and external mods rely on untranslated text, but with enabled translation, they are supplied with changed text, which is unexpected to them.
 
 ## Adding languages for Dwarf Fortress
 
