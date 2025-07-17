@@ -16,7 +16,7 @@ Localization installer and updater for Dwarf Fortress. Installs localization for
 - Choose localization language in the "Dictionary" section
 - Press "Update" button
 - Run the game in the usual way (run the game's executable or from the Steam client)
-  - Note, that if you are running non-steam linux version of DF, you need to run DF using `run_df` file.
+  - Note, that if you are running non-steam linux version of DF, you need to run it using `run_df` file.
 
 ![Screenshot](screenshot.png)
 
