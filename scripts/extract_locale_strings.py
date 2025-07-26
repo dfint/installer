@@ -22,5 +22,4 @@ for file_path in sorted(source_path.rglob("**/*.rs")):
 
 if output:
     result_file_path = project_root_path / "locale" / "en.json"
-    with open(result_file_path, "w", encoding="utf-8") as result_file:
-        result_file.write(json.dumps(output, indent=2, ensure_ascii=False))
+    result_file_path.write_text(json.dumps(output, indent=2, ensure_ascii=False), encoding="utf-8")
