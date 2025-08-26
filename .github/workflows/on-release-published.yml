@@ -1,0 +1,29 @@
+name: Tasks to do after release published
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  virustotal:
+    runs-on: ubuntu-latest
+    steps:
+      - name: VirusTotal Scan
+        uses: crazy-max/ghaction-virustotal@v4
+        with:
+          vt_api_key: ${{ secrets.VIRUSTOTAL_API_KEY }}
+          update_release_body: true
+          files: |
+            dfint-installer*
+
+  notify-dfint-github-io-repo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+    - name: Notify dfint.github.io repo about the release
+      uses: peter-evans/repository-dispatch@v3
+      with:
+        token: ${{ secrets.REPOSITORY_DISPATCH_PAT }}
+        repository: dfint/dfint.github.io
+        event-type: release
