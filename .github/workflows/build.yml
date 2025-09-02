@@ -6,6 +6,7 @@ on:
     paths:
       - "Cargo.toml"
       - "Cargo.lock"
+      - "rust-toolchain.toml"
       - "src/**"
       - "assets/**"
       - "locale/**"
@@ -16,6 +17,7 @@ on:
     paths:
       - "Cargo.toml"
       - "Cargo.lock"
+      - "rust-toolchain.toml"
       - "src/**"
       - "assets/**"
       - "locale/**"
