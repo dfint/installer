@@ -25,7 +25,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - uses: build.yml
+      - uses: .github/workflows/build.yml
 
   release:
     needs: build
