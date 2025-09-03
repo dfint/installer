@@ -24,6 +24,7 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
+      - uses: actions/checkout@v4
       - uses: ./.github/workfolws/build.yml
 
   release:
