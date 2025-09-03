@@ -20,29 +20,7 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
-
-      - uses: Swatinem/rust-cache@v2
-
-      - name: Build
-        shell: bash
-        run: cargo build --release
-
-      - name: Upload artifact (windows)
-        uses: actions/upload-artifact@v4
-        if: startsWith(matrix.os, 'windows')
-        with:
-          name: artifact-windows
-          path: ./target/release/dfint-installer.exe
-
-      - name: Upload artifact (linux)
-        uses: actions/upload-artifact@v4
-        if: startsWith(matrix.os, 'ubuntu')
-        with:
-          name: artifact-linux
-          path: ./target/release/dfint-installer
+      - uses: ./.github/workfolws/build.yml
 
   release:
     needs: build
@@ -76,21 +54,21 @@ jobs:
         with:
           subject-path: 'release/*'
 
-      - name: Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ env.VERSION }}
-          draft: true
-          body_path: base-release-text.md
-          generate_release_notes: true
-          append_body: true
-          files: |
-            release/dfint-installer-win-${{ env.VERSION }}.zip
-            release/dfint-installer-lin-${{ env.VERSION }}.tar.gz
+      # - name: Release
+      #   uses: softprops/action-gh-release@v2
+      #   with:
+      #     tag_name: ${{ env.VERSION }}
+      #     draft: true
+      #     body_path: base-release-text.md
+      #     generate_release_notes: true
+      #     append_body: true
+      #     files: |
+      #       release/dfint-installer-win-${{ env.VERSION }}.zip
+      #       release/dfint-installer-lin-${{ env.VERSION }}.tar.gz
 
-      - name: VirusTotal Scan
-        uses: crazy-max/ghaction-virustotal@v4
-        with:
-          vt_api_key: ${{ secrets.VIRUSTOTAL_API_KEY }}
-          files: |
-            ./release/*
+      # - name: VirusTotal Scan
+      #   uses: crazy-max/ghaction-virustotal@v4
+      #   with:
+      #     vt_api_key: ${{ secrets.VIRUSTOTAL_API_KEY }}
+      #     files: |
+      #       ./release/*
