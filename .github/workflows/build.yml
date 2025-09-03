@@ -23,6 +23,8 @@ on:
       - "locale/**"
       - ".github/workflows/build.yml"
 
+  workflow_call:
+
 env:
   CARGO_TERM_COLOR: always
   VERSION: 0.0.1
