@@ -3,10 +3,6 @@ name: Release
 on:
   workflow_dispatch:
 
-  pull_request:
-    branches:
-      - main
-
 env:
   CARGO_TERM_COLOR: always
   VERSION: 0.0.1
@@ -52,21 +48,21 @@ jobs:
         with:
           subject-path: 'release/*'
 
-      # - name: Release
-      #   uses: softprops/action-gh-release@v2
-      #   with:
-      #     tag_name: ${{ env.VERSION }}
-      #     draft: true
-      #     body_path: base-release-text.md
-      #     generate_release_notes: true
-      #     append_body: true
-      #     files: |
-      #       release/dfint-installer-win-${{ env.VERSION }}.zip
-      #       release/dfint-installer-lin-${{ env.VERSION }}.tar.gz
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.VERSION }}
+          draft: true
+          body_path: base-release-text.md
+          generate_release_notes: true
+          append_body: true
+          files: |
+            release/dfint-installer-win-${{ env.VERSION }}.zip
+            release/dfint-installer-lin-${{ env.VERSION }}.tar.gz
 
-      # - name: VirusTotal Scan
-      #   uses: crazy-max/ghaction-virustotal@v4
-      #   with:
-      #     vt_api_key: ${{ secrets.VIRUSTOTAL_API_KEY }}
-      #     files: |
-      #       ./release/*
+      - name: VirusTotal Scan
+        uses: crazy-max/ghaction-virustotal@v4
+        with:
+          vt_api_key: ${{ secrets.VIRUSTOTAL_API_KEY }}
+          files: |
+            ./release/*
