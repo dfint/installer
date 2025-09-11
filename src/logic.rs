@@ -54,14 +54,14 @@ impl App {
       if dialog.state() == egui_file::State::Closed && !self.bin.valid {
         ctx.send_viewport_cmd(egui::ViewportCommand::Close)
       }
-      if dialog.show(ctx).selected() {
-        if let Some(file) = dialog.path() {
-          self.bin = DfBinary::new(file.to_path_buf());
-          self.hook_checksum = self.local_hook_checksum().unwrap_or(0);
-          self.dict_checksum = self.local_dict_checksum().unwrap_or(0);
-          self.hook_metadata.pick_df_checksum(self.bin.checksum);
-          self.delete_hook_show = self.delete_old_data_check();
-        }
+      if dialog.show(ctx).selected()
+        && let Some(file) = dialog.path()
+      {
+        self.bin = DfBinary::new(file.to_path_buf());
+        self.hook_checksum = self.local_hook_checksum().unwrap_or(0);
+        self.dict_checksum = self.local_dict_checksum().unwrap_or(0);
+        self.hook_metadata.pick_df_checksum(self.bin.checksum);
+        self.delete_hook_show = self.delete_old_data_check();
       }
     }
   }
@@ -97,16 +97,16 @@ impl App {
         Message::DictMetadataLoaded(result) => match result {
           Ok(metadata) => {
             self.dict_metadata = metadata;
-            if self.selected_language == "None" {
-              if let Some(language) = self.dict_metadata.pick_language_by_code(Some(
+            if self.selected_language == "None"
+              && let Some(language) = self.dict_metadata.pick_language_by_code(Some(
                 sys_locale::get_locale()
                   .unwrap_or("en-US".to_string())
                   .split('-')
                   .collect::<Vec<&str>>()[0]
                   .to_owned(),
-              )) {
-                self.selected_language = language
-              }
+              ))
+            {
+              self.selected_language = language
             }
           }
           Err(err) => {
@@ -170,16 +170,16 @@ impl App {
             Message::DictMetadataLoaded,
           );
 
-          if self.selected_language == "None" {
-            if let Some(language) = self.dict_metadata.pick_language_by_code(Some(
+          if self.selected_language == "None"
+            && let Some(language) = self.dict_metadata.pick_language_by_code(Some(
               sys_locale::get_locale()
                 .unwrap_or("en-US".to_string())
                 .split('-')
                 .collect::<Vec<&str>>()[0]
                 .to_owned(),
-            )) {
-              self.selected_language = language;
-            }
+            ))
+          {
+            self.selected_language = language;
           }
 
           self.delete_old_data_show = self.delete_old_data_check();
