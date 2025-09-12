@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{ffi::OsStr, path::PathBuf};
 
 use anyhow::Result;
 use sysinfo::{Process, System};
@@ -26,10 +26,14 @@ pub fn scan_df() -> Option<PathBuf> {
 }
 
 pub async fn is_df_running() -> bool {
-  System::new_all()
-    .processes()
-    .values()
-    .any(|val: &Process| ["Dwarf Fortress.exe", "dwarfort", "Dwarf Fortress."].contains(&val.name()))
+  System::new_all().processes().values().any(|val: &Process| {
+    [
+      OsStr::new("Dwarf Fortress.exe"),
+      OsStr::new("dwarfort"),
+      OsStr::new("Dwarf Fortress."),
+    ]
+    .contains(&val.name())
+  })
 }
 
 pub async fn download_to_file(url: String, file: PathBuf) -> Result<()> {
