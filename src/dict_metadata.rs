@@ -1,5 +1,7 @@
 use anyhow::Result;
 
+use crate::fetch;
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Manifest {
   pub language: String,
@@ -31,7 +33,7 @@ pub struct DictMetadata {
 
 impl DictMetadata {
   pub async fn from_url(url: &str, pick_language: Option<String>) -> Result<Self> {
-    let manifests: Vec<Manifest> = ureq::get(url).call()?.into_json()?;
+    let manifests: Vec<Manifest> = fetch::fetch_json(url)?;
 
     let picked = match pick_language {
       Some(language) => {

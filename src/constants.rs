@@ -12,8 +12,8 @@ pub const ORIGINAL_FONT: &'static [u8; 1568] = include_bytes!("../assets/origina
 pub const PATH_CACHE_FILE: &'static str = "./dfint-installer.cache";
 pub const PATH_ERROR_FILE: &'static str = "./dfint-error.log";
 
-pub const URL_HOOK_MANIFEST: &'static str = "https://dfint.github.io/update-data/metadata/hook_v2.json";
-pub const URL_DICT_MANIFEST: &'static str = "https://dfint.github.io/update-data/metadata/dict.json";
+pub const URL_HOOK_MANIFEST: &'static str = "/update-data/metadata/hook_v3.json";
+pub const URL_DICT_MANIFEST: &'static str = "/update-data/metadata/dict_v3.json";
 pub const URL_BUGS: &'static str = "https://github.com/dfint/installer/issues";
 pub const URL_TRANSIFEX: &'static str =
   "https://explore.transifex.com/dwarf-fortress-translation/dwarf-fortress-steam/";

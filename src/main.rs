@@ -12,6 +12,7 @@ mod app;
 mod constants;
 mod df_binary;
 mod dict_metadata;
+mod fetch;
 mod hook_metadata;
 mod localization;
 mod logic;
