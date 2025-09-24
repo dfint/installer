@@ -12,6 +12,11 @@ pub const ORIGINAL_FONT: &'static [u8; 1568] = include_bytes!("../assets/origina
 pub const PATH_CACHE_FILE: &'static str = "./dfint-installer.cache";
 pub const PATH_ERROR_FILE: &'static str = "./dfint-error.log";
 
+pub const BASE_URL: [&'static str; 2] = [
+  "https://dfint.github.io",
+  "https://gitverse.ru/api/repos/dfint/data-mirror/raw/branch/master",
+];
+
 pub const URL_HOOK_MANIFEST: &'static str = "/update-data/metadata/hook_v3.json";
 pub const URL_DICT_MANIFEST: &'static str = "/update-data/metadata/dict_v3.json";
 pub const URL_BUGS: &'static str = "https://github.com/dfint/installer/issues";

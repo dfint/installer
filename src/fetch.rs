@@ -4,12 +4,7 @@ use std::{
   sync::atomic::{AtomicUsize, Ordering},
 };
 
-use crate::fetch;
-
-pub const BASE_URL: [&'static str; 2] = [
-  "https://dfint.github.io",
-  "https://gitverse.ru/api/repos/dfint/data-mirror/raw/branch/master",
-];
+use crate::{constants::BASE_URL, fetch};
 
 static BASE_URL_INDEX: AtomicUsize = AtomicUsize::new(0);
 
