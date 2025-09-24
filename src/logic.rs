@@ -8,6 +8,7 @@ use crate::{
   constants::*,
   df_binary::DfBinary,
   dict_metadata::DictMetadata,
+  fetch::batch_download_to_file,
   hook_metadata::HookMetadata,
   localization::{LOCALE, t},
   persistent::Store,

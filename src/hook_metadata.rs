@@ -1,5 +1,7 @@
 use anyhow::Result;
 
+use crate::fetch;
+
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
 pub struct Manifest {
   pub df: u32,
@@ -18,7 +20,7 @@ pub struct HookMetadata {
 
 impl HookMetadata {
   pub async fn from_url(url: &str, pick_df_checksum: Option<u32>) -> Result<Self> {
-    let manifests: Vec<Manifest> = ureq::get(url).call()?.into_json()?;
+    let manifests: Vec<Manifest> = fetch::fetch_json(url)?;
 
     let picked = match pick_df_checksum {
       Some(checksum) => {

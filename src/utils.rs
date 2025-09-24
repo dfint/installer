@@ -35,26 +35,3 @@ pub async fn is_df_running() -> bool {
     .contains(&val.name())
   })
 }
-
-pub async fn download_to_file(url: String, file: PathBuf) -> Result<()> {
-  let mut data: Vec<u8> = vec![];
-  ureq::get(&url)
-    .call()?
-    .into_reader()
-    .read_to_end(&mut data)?;
-  std::fs::write(file, &data)?;
-  Ok(())
-}
-
-pub async fn batch_download_to_file(items: Vec<(String, PathBuf)>) -> Result<()> {
-  let result = futures::future::join_all(
-    items
-      .iter()
-      .map(|item| download_to_file(item.0.clone(), item.1.clone())),
-  )
-  .await;
-  for item in result {
-    item?;
-  }
-  Ok(())
-}
