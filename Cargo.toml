@@ -36,4 +36,4 @@ serde_json = "1.0.143"
 static_init = "1.0.4"
 sys-locale = "0.3.2"
 sysinfo = "0.37.0"
-ureq = { version = "2.12.1", features = ["json"] }
+ureq = { version = "3.1.2", features = ["json"] }
