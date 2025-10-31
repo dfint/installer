@@ -39,7 +39,7 @@ fn main() -> Result<(), eframe::Error> {
       // };
       // cc.egui_ctx.set_style(style);
       egui_extras::install_image_loaders(&cc.egui_ctx);
-      Box::<app::App>::default()
+      Ok(Box::<app::App>::default())
     }),
   )
 }

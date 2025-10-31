@@ -1,5 +1,6 @@
 use anyhow::Result;
 use std::{
+  io::Read,
   path::PathBuf,
   sync::atomic::{AtomicUsize, Ordering},
 };
@@ -27,7 +28,7 @@ pub fn fetch_json<T: for<'de> serde::Deserialize<'de>>(path: &str) -> Result<T> 
   let url = format!("{}{}", base_url, path);
 
   match ureq::get(&url).call() {
-    Ok(res) => Ok(res.into_json().unwrap()),
+    Ok(res) => Ok(serde_json::from_reader(res.into_body().into_reader()).unwrap()),
     Err(e) => {
       if get_base_url() == base_url {
         switch_to_next_base_url();
@@ -50,7 +51,7 @@ pub fn fetch_bytes(path: &str) -> Result<Vec<u8>> {
   match ureq::get(&url).call() {
     Ok(res) => {
       let mut bytes = Vec::new();
-      res.into_reader().read_to_end(&mut bytes)?;
+      res.into_body().into_reader().read_to_end(&mut bytes)?;
       Ok(bytes)
     }
     Err(e) => {
