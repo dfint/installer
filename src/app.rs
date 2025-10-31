@@ -133,7 +133,7 @@ impl eframe::App for App {
           ui.hyperlink_to(t!("Help with translation"), URL_TRANSIFEX);
           ui.label(format!("v{VERSION}"));
           ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-            ComboBox::from_id_source("locale")
+            ComboBox::from_id_salt("locale")
               .selected_text(&self.ui_locale)
               .width(50.)
               .show_ui(ui, |ui| {
@@ -242,7 +242,7 @@ impl eframe::App for App {
         .spacing([5., 5.])
         .striped(true)
         .show(ui, |ui| {
-          ComboBox::from_id_source("languages")
+          ComboBox::from_id_salt("languages")
             .selected_text(&self.selected_language)
             .width(140.)
             .show_ui(ui, |ui| {
