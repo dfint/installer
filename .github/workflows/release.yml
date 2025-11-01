@@ -24,7 +24,7 @@ jobs:
       - uses: actions/checkout@v5
 
       - name: Restore files
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         id: download
         with:
           pattern: artifact-*
