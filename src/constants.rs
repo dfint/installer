@@ -34,3 +34,6 @@ pub const COLOR_UP_TO_DATE: Color32 = Color32::from_rgb(67, 160, 71);
 pub const COLOR_UPDATE_AVAILABLE: Color32 = Color32::from_rgb(230, 184, 0);
 pub const COLOR_CHOOSE_LANGUAGE: Color32 = Color32::from_rgb(230, 184, 0);
 pub const COLOR_ERROR: Color32 = Color32::from_rgb(211, 47, 47);
+
+pub const NO_HOOK_CHECKSUM: u32 = 4282505490;
+pub const NO_DICT_CHECKSUM: u32 = 1591420153;

@@ -188,7 +188,7 @@ impl eframe::App for App {
       ui.horizontal(|ui| {
         ui.heading(t!("Hook"));
         // cheksums without lozalization files
-        if self.hook_checksum != 4282505490 || self.dict_checksum != 1591420153 {
+        if self.hook_checksum != NO_HOOK_CHECKSUM || self.dict_checksum != NO_DICT_CHECKSUM {
           ui.with_layout(Layout::right_to_left(Align::TOP), |ui| {
             let button = ui
               .add_sized([20., 20.], Button::new("🗑"))
