@@ -48,14 +48,14 @@ jobs:
         run: cargo build --release
 
       - name: Upload artifact (windows)
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         if: startsWith(matrix.os, 'windows')
         with:
           name: artifact-windows
           path: ./target/release/dfint-installer.exe
 
       - name: Upload artifact (linux)
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         if: startsWith(matrix.os, 'ubuntu')
         with:
           name: artifact-linux
