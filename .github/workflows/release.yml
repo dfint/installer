@@ -24,7 +24,7 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Restore files
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         id: download
         with:
           pattern: artifact-*
@@ -44,7 +44,7 @@ jobs:
           tar -czf dfint-installer-lin-${{ env.VERSION }}.tar.gz dfint-installer
 
       - name: Attestation
-        uses: actions/attest-build-provenance@v3
+        uses: actions/attest-build-provenance@v4
         with:
           subject-path: 'release/*'
 
