@@ -21,7 +21,7 @@
   "Hook updated": "Hook aggiornato",
   "Unable to update hook...": "Impossibile aggiornare l'hook...",
   "Dictionary updated": "Dizionario aggiornato",
-  "Permission denied, check if the directory and files are writable": "Permesso negato, controlla che la cartella e le file sono iscrivibile.",
+  "Permission denied, check if the directory and files are writable": "Permesso negato, verifica che la cartella e i file siano scrivibili",
   "Unable to update dictionary": "Impossibile aggiornare il dizionario",
   "Warning": "Attenzione",
   "Ok": "Ok",
