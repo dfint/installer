@@ -14,6 +14,7 @@ pub fn get_base_url() -> &'static str {
   BASE_URL[index.min(BASE_URL.len() - 1)]
 }
 
+/// Advances to the next fallback base URL, leaving the index unchanged at the last URL.
 pub fn switch_to_next_base_url() {
   BASE_URL_INDEX
     .try_update(Ordering::Relaxed, Ordering::Relaxed, |index| {

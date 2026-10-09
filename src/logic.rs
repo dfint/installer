@@ -35,6 +35,13 @@ pub enum Message {
 }
 
 impl App {
+  /// Returns an opened file dialog filtered to Dwarf Fortress executables.
+  ///
+  /// Starts in `dir`, or the current working directory when `dir` is `None`.
+  ///
+  /// # Panics
+  ///
+  /// Panics if the current working directory cannot be read, even when `dir` is supplied.
   pub fn file_dialog(&self, dir: Option<PathBuf>) -> Option<egui_file::FileDialog> {
     let mut dialog = egui_file::FileDialog::open_file()
       .show_files_filter(Box::new(|path| {
@@ -199,6 +206,7 @@ impl App {
     self.pool.execute(Store::new(), Message::StoreLoaded);
   }
 
+  /// Shows a warning identified by `name` and requests window closure when OK is clicked.
   pub fn guard(&mut self, ctx: &egui::Context, name: &str, text: &str) {
     egui::Modal::new(egui::Id::new(name)).show(ctx, |ui| {
       ui.heading(t!("Warning"));
@@ -257,6 +265,10 @@ impl App {
     );
   }
 
+  /// Shows a confirmation modal identified by `tag` with the supplied warning text.
+  ///
+  /// Invokes `no` or `yes` when the corresponding button is clicked. Callbacks must
+  /// update application state to stop showing the dialog on subsequent frames.
   fn dialog(
     &mut self,
     ctx: &egui::Context,

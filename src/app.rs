@@ -66,6 +66,7 @@ impl Default for App {
 }
 
 impl eframe::App for App {
+  /// Processes pending state updates and renders the installer UI for the current frame.
   fn ui(&mut self, ui: &mut eframe::egui::Ui, _frame: &mut eframe::Frame) {
     let ctx = ui.ctx().clone();
     // handle incoming messages from thread pool
