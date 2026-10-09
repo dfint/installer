@@ -16,7 +16,7 @@ pub fn get_base_url() -> &'static str {
 
 pub fn switch_to_next_base_url() {
   BASE_URL_INDEX
-    .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |index| {
+    .try_update(Ordering::Relaxed, Ordering::Relaxed, |index| {
       let max_index = BASE_URL.len() - 1;
       if index < max_index { Some(index + 1) } else { None }
     })

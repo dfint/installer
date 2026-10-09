@@ -200,17 +200,15 @@ impl App {
   }
 
   pub fn guard(&mut self, ctx: &egui::Context, name: &str, text: &str) {
-    egui::CentralPanel::default().show(ctx, |_ui| {
-      egui::Modal::new(egui::Id::new(name)).show(ctx, |ui| {
-        ui.heading(t!("Warning"));
-        ui.add_space(8.);
-        ui.label(text);
-        ui.add_space(8.);
-        ui.vertical_centered(|ui| {
-          if ui.button(t!("Ok")).clicked() {
-            ctx.send_viewport_cmd(egui::ViewportCommand::Close);
-          }
-        });
+    egui::Modal::new(egui::Id::new(name)).show(ctx, |ui| {
+      ui.heading(t!("Warning"));
+      ui.add_space(8.);
+      ui.label(text);
+      ui.add_space(8.);
+      ui.vertical_centered(|ui| {
+        if ui.button(t!("Ok")).clicked() {
+          ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+        }
       });
     });
   }
