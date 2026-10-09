@@ -66,7 +66,8 @@ impl Default for App {
 }
 
 impl eframe::App for App {
-  fn update(&mut self, ctx: &Context, _frame: &mut eframe::Frame) {
+  fn ui(&mut self, ui: &mut eframe::egui::Ui, _frame: &mut eframe::Frame) {
+    let ctx = ui.ctx();
     // handle incoming messages from thread pool
     self.update_state();
     // close event
@@ -290,7 +291,7 @@ impl eframe::App for App {
       {
         ui.style_mut().text_styles.insert(
           TextStyle::Button,
-          FontId::new(20., eframe::epaint::FontFamily::Proportional),
+          FontId::new(20., eframe::egui::FontFamily::Proportional),
         );
         ui.vertical_centered(|ui| {
           if self.loading > 0 {

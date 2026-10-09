@@ -36,7 +36,7 @@ pub enum Message {
 
 impl App {
   pub fn file_dialog(&self, dir: Option<PathBuf>) -> Option<egui_file::FileDialog> {
-    let mut dialog = egui_file::FileDialog::open_file(self.opened_file.clone())
+    let mut dialog = egui_file::FileDialog::open_file()
       .show_files_filter(Box::new(|path| {
         path.file_name() == Some(OsStr::new("Dwarf Fortress.exe")) || path.file_name() == Some(OsStr::new("dwarfort"))
       }))
@@ -201,19 +201,17 @@ impl App {
 
   pub fn guard(&mut self, ctx: &egui::Context, name: &str, text: &str) {
     egui::CentralPanel::default().show(ctx, |_ui| {
-      let modal = egui_modal::Modal::new(ctx, name);
-      modal.show(|ui| {
-        modal.title(ui, t!("Warning"));
-        modal.frame(ui, |ui| {
-          modal.body_and_icon(ui, text, egui_modal::Icon::Info);
-        });
-        modal.buttons(ui, |ui| {
-          if modal.caution_button(ui, t!("Ok")).clicked() {
+      egui::Modal::new(egui::Id::new(name)).show(ctx, |ui| {
+        ui.heading(t!("Warning"));
+        ui.add_space(8.);
+        ui.label(text);
+        ui.add_space(8.);
+        ui.vertical_centered(|ui| {
+          if ui.button(t!("Ok")).clicked() {
             ctx.send_viewport_cmd(egui::ViewportCommand::Close);
           }
         });
       });
-      modal.open();
     });
   }
 
@@ -269,24 +267,20 @@ impl App {
     no: impl FnOnce(&mut App),
     yes: impl FnOnce(&mut App),
   ) {
-    let modal = egui_modal::Modal::new(ctx, tag);
-    modal.show(|ui| {
-      modal.title(ui, t!("Warning"));
-      modal.frame(ui, |ui| {
-        modal.body_and_icon(ui, text, egui_modal::Icon::Info);
-      });
-      modal.buttons(ui, |ui| {
-        if modal.button(ui, t!("No")).clicked() {
+    egui::Modal::new(egui::Id::new(tag.to_string())).show(ctx, |ui| {
+      ui.heading(t!("Warning"));
+      ui.add_space(8.);
+      ui.label(text);
+      ui.add_space(8.);
+      ui.horizontal(|ui| {
+        if ui.button(t!("No")).clicked() {
           no(self);
-          modal.close();
-        };
-        if modal.suggested_button(ui, t!("Yes")).clicked() {
+        }
+        if ui.button(t!("Yes")).clicked() {
           yes(self);
-          modal.close();
-        };
+        }
       });
     });
-    modal.open();
   }
 
   pub fn update_data(&mut self) {
