@@ -1,4 +1,4 @@
-use include_dir::{include_dir, Dir};
+use include_dir::{Dir, include_dir};
 use std::collections::HashMap;
 
 const LOCALES: Dir<'_> = include_dir!("./locale");
