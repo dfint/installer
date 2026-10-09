@@ -2,7 +2,7 @@ use async_std::task;
 use futures::FutureExt;
 use std::{
   future::Future,
-  sync::mpsc::{channel, Receiver, Sender, TryIter},
+  sync::mpsc::{Receiver, Sender, TryIter, channel},
 };
 
 pub struct ThreadPool<T> {

@@ -1,5 +1,5 @@
 use eframe::egui::{
-  Align, Button, CentralPanel, ComboBox, Context, FontId, Grid, Image, Layout, Rect, Spinner, TextStyle, TopBottomPanel,
+  Align, Button, CentralPanel, ComboBox, FontId, Grid, Image, Layout, Panel, Rect, Spinner, TextStyle,
 };
 use std::path::PathBuf;
 
@@ -66,7 +66,9 @@ impl Default for App {
 }
 
 impl eframe::App for App {
-  fn update(&mut self, ctx: &Context, _frame: &mut eframe::Frame) {
+  /// Processes pending state updates and renders the installer UI for the current frame.
+  fn ui(&mut self, ui: &mut eframe::egui::Ui, _frame: &mut eframe::Frame) {
+    let ctx = ui.ctx().clone();
     // handle incoming messages from thread pool
     self.update_state();
     // close event
@@ -78,7 +80,7 @@ impl eframe::App for App {
     // guards
     if self.df_running {
       self.guard(
-        ctx,
+        &ctx,
         "df_is_running",
         &t!("Dwarf Fortress is running. Close it before using the installer."),
       );
@@ -93,18 +95,18 @@ impl eframe::App for App {
       self.open_file_dialog = self.file_dialog(None);
     }
     // if file dialog opened
-    self.opened_file_dialog(ctx);
+    self.opened_file_dialog(&ctx);
     // if delete old data dialog opened
     if self.delete_old_data_show {
-      self.delete_old_hook_dialog(ctx)
+      self.delete_old_hook_dialog(&ctx)
     }
     // if delete hook dialog opened
     if self.delete_hook_show {
-      self.delete_hook_dialog(ctx)
+      self.delete_hook_dialog(&ctx)
     }
     // show loading on startup
     if self.state != State::Idle {
-      CentralPanel::default().show(ctx, |ui| {
+      CentralPanel::default().show(ui, |ui| {
         ui.put(
           Rect::from_min_max([0., 0.].into(), [720., 450.].into()),
           Spinner::new().size(40.),
@@ -115,9 +117,10 @@ impl eframe::App for App {
 
     // UI block
     // status bar
-    TopBottomPanel::bottom("status")
-      .min_height(25.)
-      .show(ctx, |ui| {
+    Panel::bottom("status")
+      .default_size(25.)
+      .size_range(25.0..=f32::INFINITY)
+      .show(ui, |ui| {
         ui.horizontal_centered(|ui| {
           ui.add(
             Image::new(GITHUB_ICON.to_owned())
@@ -151,7 +154,7 @@ impl eframe::App for App {
         });
       });
 
-    CentralPanel::default().show(ctx, |ui| {
+    CentralPanel::default().show(ui, |ui| {
       ui.add_space(5.);
       ui.heading("Dwarf Fortress");
       ui.separator();
@@ -290,7 +293,7 @@ impl eframe::App for App {
       {
         ui.style_mut().text_styles.insert(
           TextStyle::Button,
-          FontId::new(20., eframe::epaint::FontFamily::Proportional),
+          FontId::new(20., eframe::egui::FontFamily::Proportional),
         );
         ui.vertical_centered(|ui| {
           if self.loading > 0 {
@@ -305,6 +308,6 @@ impl eframe::App for App {
       }
     });
 
-    self.toast.show(ctx)
+    self.toast.show(&ctx)
   }
 }

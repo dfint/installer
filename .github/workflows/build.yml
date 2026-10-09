@@ -43,6 +43,10 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
 
+      - name: Check formatting
+        shell: bash
+        run: cargo fmt --check
+
       - name: Build
         shell: bash
         run: cargo build --release
