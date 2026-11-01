@@ -67,6 +67,7 @@ impl App {
       self.hook_metadata.pick_df_checksum(self.bin.checksum);
       self.delete_hook_show = self.delete_old_data_check();
     } else if !self.bin.valid {
+      self.closing = true;
       ctx.send_viewport_cmd(egui::ViewportCommand::Close);
     }
   }
