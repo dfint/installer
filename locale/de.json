@@ -7,6 +7,7 @@
   "Checksum": "Prüfsumme",
   "Hook": "Programmschnittstelle",
   "Delete localization files": "Lokalisierungsdateien löschen",
+  "loading data": "Datenladen",
   "hook data was not loaded": "Programmschnittstellen-Daten wurden nicht geladen",
   "this DF version is not supported": "diese DF-Version wird nicht unterstützt",
   "up-to-date": "Aktuell",
