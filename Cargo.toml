@@ -28,11 +28,11 @@ eframe = { version = "0.37.0", default-features = false, features = [
   "wayland",
   "x11",
 ] }
-egui-notify = "0.23.0"
+egui-notify = "0.24.0"
 egui_extras = { version = "0.37.0", features = ["all_loaders"] }
-egui_file = "0.28.0"
 env_logger = "0.11.11"
 exe = "0.5.7"
+rfd = "0.17.2"
 futures = "0.3.34"
 include_dir = "0.7.4"
 regex = "1.13.1"

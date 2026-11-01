@@ -1,6 +1,5 @@
 use anyhow::Result;
 use eframe::egui;
-use std::ffi::OsStr;
 use std::path::PathBuf;
 
 use crate::{
@@ -35,42 +34,40 @@ pub enum Message {
 }
 
 impl App {
-  /// Returns an opened file dialog filtered to Dwarf Fortress executables.
+  /// Shows a native file picker filtered to Dwarf Fortress executables.
   ///
   /// Starts in `dir`, or the current working directory when `dir` is `None`.
-  ///
-  /// # Panics
-  ///
-  /// Panics if the current working directory cannot be read, even when `dir` is supplied.
-  pub fn file_dialog(&self, dir: Option<PathBuf>) -> Option<egui_file::FileDialog> {
-    let mut dialog = egui_file::FileDialog::open_file()
-      .show_files_filter(Box::new(|path| {
-        path.file_name() == Some(OsStr::new("Dwarf Fortress.exe")) || path.file_name() == Some(OsStr::new("dwarfort"))
-      }))
-      .resizable(false)
-      .show_rename(false)
-      .show_new_folder(false)
-      .title(&t!("Open Dwarf Fortress executable"))
-      .default_size([720., 381.]);
-    dialog.set_path(dir.unwrap_or(std::env::current_dir().unwrap()));
-    dialog.open();
-    Some(dialog)
+  /// Returns the selected executable path, or `None` if the user cancels the dialog.
+  pub fn file_dialog(&self, dir: Option<PathBuf>) -> Option<PathBuf> {
+    let start_dir = dir.unwrap_or_else(|| std::env::current_dir().unwrap_or_default());
+
+    rfd::FileDialog::new()
+      .set_title(&t!("Open Dwarf Fortress executable"))
+      .set_directory(start_dir)
+      .add_filter("Executable", &["exe", "dwarfort"])
+      .pick_file()
   }
 
+  /// Handles the file-selection flow for the native Dwarf Fortress picker.
+  ///
+  /// When a valid executable is chosen, the app updates the binary state and related
+  /// metadata. If the user cancels the dialog and no valid binary is available, the
+  /// window is closed to avoid leaving the installer in an unusable state.
   pub fn opened_file_dialog(&mut self, ctx: &egui::Context) {
-    if let Some(dialog) = &mut self.open_file_dialog {
-      if dialog.state() == egui_file::State::Closed && !self.bin.valid {
-        ctx.send_viewport_cmd(egui::ViewportCommand::Close)
-      }
-      if dialog.show(ctx).selected()
-        && let Some(file) = dialog.path()
-      {
-        self.bin = DfBinary::new(file.to_path_buf());
-        self.hook_checksum = self.local_hook_checksum().unwrap_or(0);
-        self.dict_checksum = self.local_dict_checksum().unwrap_or(0);
-        self.hook_metadata.pick_df_checksum(self.bin.checksum);
-        self.delete_hook_show = self.delete_old_data_check();
-      }
+    if !self.file_picker_requested {
+      return;
+    }
+
+    self.file_picker_requested = false;
+
+    if let Some(file) = self.file_dialog(Some(self.bin.dir.clone())) {
+      self.bin = DfBinary::new(file);
+      self.hook_checksum = self.local_hook_checksum().unwrap_or(0);
+      self.dict_checksum = self.local_dict_checksum().unwrap_or(0);
+      self.hook_metadata.pick_df_checksum(self.bin.checksum);
+      self.delete_hook_show = self.delete_old_data_check();
+    } else if !self.bin.valid {
+      ctx.send_viewport_cmd(egui::ViewportCommand::Close);
     }
   }
 
