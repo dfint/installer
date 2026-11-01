@@ -24,7 +24,7 @@ pub enum State {
 pub struct App {
   pub pool: ThreadPool<Message>,
   pub toast: egui_notify::Toasts,
-  pub open_file_dialog: Option<egui_file::FileDialog>,
+  pub file_picker_requested: bool,
   pub opened_file: Option<PathBuf>,
   pub delete_old_data_show: bool,
   pub delete_hook_show: bool,
@@ -46,7 +46,7 @@ impl Default for App {
     Self {
       pool: ThreadPool::new(),
       toast: egui_notify::Toasts::default().with_anchor(egui_notify::Anchor::BottomRight),
-      open_file_dialog: None,
+      file_picker_requested: false,
       opened_file: None,
       delete_old_data_show: false,
       delete_hook_show: false,
@@ -91,8 +91,8 @@ impl eframe::App for App {
       self.on_start();
     }
     // if binary not picked, force to do it
-    if !self.bin.valid && self.open_file_dialog.is_none() && self.state == State::Idle {
-      self.open_file_dialog = self.file_dialog(None);
+    if !self.bin.valid && !self.file_picker_requested && self.state == State::Idle {
+      self.file_picker_requested = true;
     }
     // if file dialog opened
     self.opened_file_dialog(&ctx);
@@ -168,7 +168,7 @@ impl eframe::App for App {
           ui.label(t!("Path"));
           ui.label(self.bin.to_string());
           if ui.small_button("🔍").clicked() {
-            self.open_file_dialog = self.file_dialog(Some(self.bin.dir.clone()));
+            self.file_picker_requested = true;
           };
           ui.end_row();
           ui.label(t!("Version"));
