@@ -26,7 +26,11 @@ pub fn scan_df() -> Option<PathBuf> {
 }
 
 pub async fn is_df_running() -> bool {
-  System::new_all().processes().values().any(|val: &Process| {
+  let Ok(system) = System::new_all() else {
+    return false;
+  };
+
+  system.processes().values().any(|val: &Process| {
     [
       OsStr::new("Dwarf Fortress.exe"),
       OsStr::new("dwarfort"),
