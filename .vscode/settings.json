@@ -1,0 +1,6 @@
+{
+  "rust-analyzer.files.excludeDirs": ["target"],
+  "files.watcherExclude": {
+    "**/target/**": true
+  }
+}
