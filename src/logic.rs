@@ -205,7 +205,7 @@ impl App {
 
   /// Shows a warning identified by `name` and requests window closure when OK is clicked.
   pub fn guard(&mut self, ctx: &egui::Context, name: &str, text: &str) {
-    egui::Modal::new(egui::Id::new(name)).show(ctx, |ui| {
+    egui::Modal::new(egui::Id::unique(name)).show(ctx, |ui| {
       ui.heading(t!("Warning"));
       ui.add_space(8.);
       ui.label(text);
@@ -274,7 +274,7 @@ impl App {
     no: impl FnOnce(&mut App),
     yes: impl FnOnce(&mut App),
   ) {
-    egui::Modal::new(egui::Id::new(tag.to_string())).show(ctx, |ui| {
+    egui::Modal::new(egui::Id::unique(tag.to_string())).show(ctx, |ui| {
       ui.heading(t!("Warning"));
       ui.add_space(8.);
       ui.label(text);
