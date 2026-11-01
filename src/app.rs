@@ -29,6 +29,7 @@ pub struct App {
   pub delete_old_data_show: bool,
   pub delete_hook_show: bool,
   pub on_start: bool,
+  pub closing: bool,
   pub loading: u8,
   pub df_running: bool,
   pub selected_language: String,
@@ -51,6 +52,7 @@ impl Default for App {
       delete_old_data_show: false,
       delete_hook_show: false,
       on_start: true,
+      closing: false,
       loading: 0,
       df_running: false,
       selected_language: "None".to_string(),
@@ -91,11 +93,14 @@ impl eframe::App for App {
       self.on_start();
     }
     // if binary not picked, force to do it
-    if !self.bin.valid && !self.file_picker_requested && self.state == State::Idle {
+    if !self.closing && !self.bin.valid && !self.file_picker_requested && self.state == State::Idle {
       self.file_picker_requested = true;
     }
     // if file dialog opened
     self.opened_file_dialog(&ctx);
+    if self.closing {
+      return;
+    }
     // if delete old data dialog opened
     if self.delete_old_data_show {
       self.delete_old_hook_dialog(&ctx)
