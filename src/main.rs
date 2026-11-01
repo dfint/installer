@@ -38,6 +38,19 @@ fn main() -> Result<(), eframe::Error> {
       //   ..Style::default()
       // };
       // cc.egui_ctx.set_style(style);
+      let mut fonts = egui::FontDefinitions::default();
+      fonts.font_data.insert(
+        "dejavu_sans".to_owned(),
+        egui::FontData::from_static(include_bytes!("../assets/DejaVuSans.ttf")).into(),
+      );
+      for family in [egui::FontFamily::Proportional, egui::FontFamily::Monospace] {
+        fonts
+          .families
+          .get_mut(&family)
+          .unwrap()
+          .push("dejavu_sans".to_owned());
+      }
+      cc.egui_ctx.set_fonts(fonts);
       egui_extras::install_image_loaders(&cc.egui_ctx);
       Ok(Box::<app::App>::default())
     }),

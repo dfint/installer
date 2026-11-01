@@ -39,3 +39,5 @@ It is desirable that there is at least a translation of the title menu and some 
 You can help with translation of the installer to your language: [translation of the installer on transifex.com](https://app.transifex.com/dwarf-fortress-translation/dfint-installer/)
 
 There are only about 40 strings to translate. Once the translation to a language is finished, it can be added to the installer and will be available in its future releases.
+
+The installer includes DejaVu Sans as a fallback font for characters missing from the default UI fonts.
