@@ -900,7 +900,7 @@ dependencies = [
 
 [[package]]
 name = "dfint-installer"
-version = "0.6.6"
+version = "0.7.0"
 dependencies = [
  "anyhow",
  "async-std",
