@@ -28,6 +28,7 @@ eframe = { version = "0.37.0", default-features = false, features = [
   "wayland",
   "x11",
 ] }
+egui = { version = "0.37.0", features = ["monochrome_emoji_fonts"] }
 egui-notify = "0.24.0"
 egui_extras = { version = "0.37.0", features = ["all_loaders"] }
 env_logger = "0.11.11"
