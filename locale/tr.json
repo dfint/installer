@@ -7,6 +7,7 @@
   "Checksum": "Sağlama toplamı",
   "Hook": "Bağlantı",
   "Delete localization files": "Yerelleştirme dosyalarını sil",
+  "loading data": "Veriler yükleniyor",
   "hook data was not loaded": "Bağlantı yüklenmedi",
   "this DF version is not supported": "bu DF sürümü desteklenmiyor",
   "up-to-date": "güncel",

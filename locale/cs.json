@@ -7,6 +7,7 @@
   "Checksum": "Kontrolní součet",
   "Hook": "Hook",
   "Delete localization files": "Smazání lokalizačních souborů",
+  "loading data": "načítání dat",
   "hook data was not loaded": "hook data nebyla načtena",
   "this DF version is not supported": "tato verze DF neni podporována",
   "up-to-date": "aktuální",

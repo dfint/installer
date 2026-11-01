@@ -7,6 +7,7 @@
   "Checksum": "Somme de contrôle",
   "Hook": "Hook",
   "Delete localization files": "Supprimer les fichiers de localisation",
+  "loading data": "chargement des données",
   "hook data was not loaded": "Le hook n'a pas été chargé",
   "this DF version is not supported": "cette version de DF n'est pas supportée",
   "up-to-date": "à jour",
