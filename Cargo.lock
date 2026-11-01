@@ -908,6 +908,7 @@ dependencies = [
  "chrono",
  "crc32fast",
  "eframe",
+ "egui",
  "egui-notify",
  "egui_extras",
  "env_logger",
