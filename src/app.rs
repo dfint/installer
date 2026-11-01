@@ -1,6 +1,4 @@
-use eframe::egui::{
-  Align, Button, CentralPanel, ComboBox, FontId, Grid, Image, Layout, Panel, Rect, Spinner, TextStyle,
-};
+use eframe::egui::{Align, Button, CentralPanel, ComboBox, FontId, Grid, Image, Layout, Panel, Spinner, TextStyle};
 use std::path::PathBuf;
 
 use crate::{
@@ -36,6 +34,8 @@ pub struct App {
   pub ui_locale: String,
   pub hook_checksum: u32,
   pub dict_checksum: u32,
+  pub hook_metadata_loading: bool,
+  pub dict_metadata_loading: bool,
   pub hook_metadata: HookMetadata,
   pub dict_metadata: DictMetadata,
   pub bin: DfBinary,
@@ -59,6 +59,8 @@ impl Default for App {
       ui_locale: LOCALE.read().current_locale(),
       hook_checksum: 0,
       dict_checksum: 0,
+      hook_metadata_loading: false,
+      dict_metadata_loading: false,
       hook_metadata: HookMetadata::default(),
       dict_metadata: DictMetadata::default(),
       bin: DfBinary::default(),
@@ -109,15 +111,9 @@ impl eframe::App for App {
     if self.delete_hook_show {
       self.delete_hook_dialog(&ctx)
     }
-    // show loading on startup
+    // Keep the interface visible, but inactive, until startup data is loaded.
     if self.state != State::Idle {
-      CentralPanel::default().show(ui, |ui| {
-        ui.put(
-          Rect::from_min_max([0., 0.].into(), [720., 450.].into()),
-          Spinner::new().size(40.),
-        );
-      });
-      return;
+      ui.disable();
     }
 
     // UI block
@@ -224,16 +220,20 @@ impl eframe::App for App {
             ui.label(self.hook_metadata.manifest.checksum.to_string());
           }
 
-          let (text, color) = match (
-            self.hook_metadata.manifest.df == self.bin.checksum,
-            self.hook_metadata.manifest.checksum == self.hook_checksum,
-            self.hook_metadata.manifest.checksum == 0,
-            self.hook_metadata.vec_manifests.is_empty(),
-          ) {
-            (_, _, true, true) => (format!("✖ {}", t!("hook data was not loaded")), COLOR_ERROR),
-            (false, _, _, _) => (format!("✖ {}", t!("this DF version is not supported")), COLOR_ERROR),
-            (true, true, _, _) => (format!("✅ {}", t!("up-to-date")), COLOR_UP_TO_DATE),
-            (true, false, _, _) => (format!("⚠ {}", t!("update available")), COLOR_UPDATE_AVAILABLE),
+          let (text, color) = if self.state != State::Idle || self.hook_metadata_loading {
+            (format!("○ {}", t!("loading data")), COLOR_LOADING)
+          } else {
+            match (
+              self.hook_metadata.manifest.df == self.bin.checksum,
+              self.hook_metadata.manifest.checksum == self.hook_checksum,
+              self.hook_metadata.manifest.checksum == 0,
+              self.hook_metadata.vec_manifests.is_empty(),
+            ) {
+              (_, _, true, true) => (format!("✖ {}", t!("hook data was not loaded")), COLOR_ERROR),
+              (false, _, _, _) => (format!("✖ {}", t!("this DF version is not supported")), COLOR_ERROR),
+              (true, true, _, _) => (format!("✅ {}", t!("up-to-date")), COLOR_UP_TO_DATE),
+              (true, false, _, _) => (format!("⚠ {}", t!("update available")), COLOR_UPDATE_AVAILABLE),
+            }
           };
           ui.colored_label(color, text);
 
@@ -277,15 +277,19 @@ impl eframe::App for App {
             ui.label(self.dict_metadata.manifest.checksum.to_string());
           }
 
-          let (text, color) = match (
-            self.dict_metadata.manifest.checksum == self.dict_checksum,
-            self.selected_language == "None",
-            self.dict_metadata.vec_manifests.is_empty(),
-          ) {
-            (_, _, true) => (format!("✖ {}", t!("dictionary data was not loaded")), COLOR_ERROR),
-            (true, false, false) => (format!("✅ {}", t!("up-to-date")), COLOR_UP_TO_DATE),
-            (false, false, false) => (format!("⚠ {}", t!("update available")), COLOR_UPDATE_AVAILABLE),
-            (_, true, false) => (format!("⚠ {}", t!("choose language")), COLOR_CHOOSE_LANGUAGE),
+          let (text, color) = if self.state != State::Idle || self.dict_metadata_loading {
+            (format!("○ {}", t!("loading data")), COLOR_LOADING)
+          } else {
+            match (
+              self.dict_metadata.manifest.checksum == self.dict_checksum,
+              self.selected_language == "None",
+              self.dict_metadata.vec_manifests.is_empty(),
+            ) {
+              (_, _, true) => (format!("✖ {}", t!("dictionary data was not loaded")), COLOR_ERROR),
+              (true, false, false) => (format!("✅ {}", t!("up-to-date")), COLOR_UP_TO_DATE),
+              (false, false, false) => (format!("⚠ {}", t!("update available")), COLOR_UPDATE_AVAILABLE),
+              (_, true, false) => (format!("⚠ {}", t!("choose language")), COLOR_CHOOSE_LANGUAGE),
+            }
           };
           ui.colored_label(color, text);
           ui.end_row();
@@ -313,6 +317,12 @@ impl eframe::App for App {
       }
     });
 
-    self.toast.show(&ctx)
+    self.toast.show(&ctx);
+
+    if self.state != State::Idle {
+      egui::Modal::new(egui::Id::unique("startup_loading")).show(&ctx, |ui| {
+        ui.add(Spinner::new().size(40.));
+      });
+    }
   }
 }

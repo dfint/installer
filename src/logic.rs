@@ -89,36 +89,42 @@ impl App {
   pub fn update_state(&mut self) {
     for msg in self.pool.poll() {
       match msg {
-        Message::HookMetadataLoaded(result) => match result {
-          Ok(metadata) => {
-            self.hook_metadata = metadata;
-            if self.hook_metadata.manifest.checksum == 0 && self.bin.valid {
-              error!(self, t!("This DF version is not supported"));
+        Message::HookMetadataLoaded(result) => {
+          self.hook_metadata_loading = false;
+          match result {
+            Ok(metadata) => {
+              self.hook_metadata = metadata;
+              if self.hook_metadata.manifest.checksum == 0 && self.bin.valid {
+                error!(self, t!("This DF version is not supported"));
+              }
+            }
+            Err(err) => {
+              error!(self, t!("Unable to fetch hook metadata..."), err.to_string());
             }
           }
-          Err(err) => {
-            error!(self, t!("Unable to fetch hook metadata..."), err.to_string());
-          }
-        },
-        Message::DictMetadataLoaded(result) => match result {
-          Ok(metadata) => {
-            self.dict_metadata = metadata;
-            if self.selected_language == "None"
-              && let Some(language) = self.dict_metadata.pick_language_by_code(Some(
-                sys_locale::get_locale()
-                  .unwrap_or("en-US".to_string())
-                  .split('-')
-                  .collect::<Vec<&str>>()[0]
-                  .to_owned(),
-              ))
-            {
-              self.selected_language = language
+        }
+        Message::DictMetadataLoaded(result) => {
+          self.dict_metadata_loading = false;
+          match result {
+            Ok(metadata) => {
+              self.dict_metadata = metadata;
+              if self.selected_language == "None"
+                && let Some(language) = self.dict_metadata.pick_language_by_code(Some(
+                  sys_locale::get_locale()
+                    .unwrap_or("en-US".to_string())
+                    .split('-')
+                    .collect::<Vec<&str>>()[0]
+                    .to_owned(),
+                ))
+              {
+                self.selected_language = language
+              }
+            }
+            Err(err) => {
+              error!(self, t!("Unable to fetch hook metadata..."), err.to_string());
             }
           }
-          Err(err) => {
-            error!(self, t!("Unable to fetch hook metadata..."), err.to_string());
-          }
-        },
+        }
         Message::HookUpdated(result) => {
           match result {
             Ok(_) => {
@@ -165,12 +171,14 @@ impl App {
           self.dict_metadata = dict_metadata;
 
           self.hook_checksum = self.local_hook_checksum().unwrap_or(0);
+          self.hook_metadata_loading = true;
           self.pool.execute(
             HookMetadata::from_url(URL_HOOK_MANIFEST, Some(self.bin.checksum)),
             Message::HookMetadataLoaded,
           );
 
           self.dict_checksum = self.local_dict_checksum().unwrap_or(0);
+          self.dict_metadata_loading = true;
           self.pool.execute(
             DictMetadata::from_url(URL_DICT_MANIFEST, Some(self.selected_language.clone())),
             Message::DictMetadataLoaded,
