@@ -137,6 +137,14 @@ impl eframe::App for App {
           ui.hyperlink_to(t!("Help with translation"), URL_TRANSIFEX);
           ui.label(format!("v{VERSION}"));
           ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+            if self.hook_checksum != NO_HOOK_CHECKSUM || self.dict_checksum != NO_DICT_CHECKSUM {
+              let button = ui
+                .add_sized([20., 20.], Button::new("🗑"))
+                .on_hover_text(t!("Delete localization files"));
+              if button.clicked() {
+                self.delete_hook_show = true;
+              }
+            }
             ComboBox::from_id_salt("locale")
               .selected_text(&self.ui_locale)
               .width(50.)
@@ -191,17 +199,6 @@ impl eframe::App for App {
 
       ui.horizontal(|ui| {
         ui.heading(t!("Hook"));
-        // cheksums without lozalization files
-        if self.hook_checksum != NO_HOOK_CHECKSUM || self.dict_checksum != NO_DICT_CHECKSUM {
-          ui.with_layout(Layout::right_to_left(Align::TOP), |ui| {
-            let button = ui
-              .add_sized([20., 20.], Button::new("🗑"))
-              .on_hover_text(t!("Delete localization files"));
-            if button.clicked() {
-              self.delete_hook_show = true
-            }
-          });
-        }
       });
       ui.separator();
 
