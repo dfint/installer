@@ -34,6 +34,11 @@ pub enum Message {
 }
 
 impl App {
+  /// Returns whether any localization data is installed.
+  pub fn translation_installed(&self) -> bool {
+    self.hook_checksum != NO_HOOK_CHECKSUM || self.dict_checksum != NO_DICT_CHECKSUM
+  }
+
   /// Shows a native file picker filtered to Dwarf Fortress executables.
   ///
   /// Starts in `dir`, or the current working directory when `dir` is `None`.
