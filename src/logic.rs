@@ -34,6 +34,16 @@ pub enum Message {
 }
 
 impl App {
+  /// Returns whether neither the hook nor dictionary is installed.
+  pub fn clean_installation(&self) -> bool {
+    self.hook_checksum == NO_HOOK_CHECKSUM && self.dict_checksum == NO_DICT_CHECKSUM
+  }
+
+  /// Returns whether any localization files are present.
+  pub fn any_localization_files_present(&self) -> bool {
+    self.hook_checksum != NO_HOOK_CHECKSUM || self.dict_checksum != NO_DICT_CHECKSUM
+  }
+
   /// Shows a native file picker filtered to Dwarf Fortress executables.
   ///
   /// Starts in `dir`, or the current working directory when `dir` is `None`.

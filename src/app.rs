@@ -137,7 +137,7 @@ impl eframe::App for App {
           ui.hyperlink_to(t!("Help with translation"), URL_TRANSIFEX);
           ui.label(format!("v{VERSION}"));
           ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-            if self.hook_checksum != NO_HOOK_CHECKSUM || self.dict_checksum != NO_DICT_CHECKSUM {
+            if self.any_localization_files_present() {
               let button = ui
                 .add_sized([20., 20.], Button::new("🗑"))
                 .on_hover_text(t!("Delete localization files"));
@@ -305,7 +305,12 @@ impl eframe::App for App {
           if self.loading > 0 {
             ui.add(Spinner::new().size(40.));
           } else {
-            let button = ui.add_sized([130., 40.], Button::new(t!("Update")));
+            let button_text = if self.clean_installation() {
+              t!("Install")
+            } else {
+              t!("Update")
+            };
+            let button = ui.add_sized([130., 40.], Button::new(button_text));
             if button.clicked() {
               self.update_data();
             }
