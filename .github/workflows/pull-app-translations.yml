@@ -28,7 +28,6 @@ jobs:
         rm -f ./locale/zh*.json
         rm -f ./locale/ja.json
         rm -f ./locale/ko.json
-        rm -f ./locale/vi.json
         # Not enough translation percentage of the game itself
         rm -f ./locale/lt.json
 
