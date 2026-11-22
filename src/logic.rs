@@ -51,11 +51,15 @@ impl App {
   pub fn file_dialog(&self, dir: Option<PathBuf>) -> Option<PathBuf> {
     let start_dir = dir.unwrap_or_else(|| std::env::current_dir().unwrap_or_default());
 
-    rfd::FileDialog::new()
+    let dialog = rfd::FileDialog::new()
       .set_title(&t!("Open Dwarf Fortress executable"))
-      .set_directory(start_dir)
-      .add_filter("Executable", &["exe", "dwarfort"])
-      .pick_file()
+      .set_directory(start_dir);
+
+    if cfg!(windows) {
+      dialog.add_filter("Executable", &["exe"]).pick_file()
+    } else {
+      dialog.add_filter("Executable", &["*"]).pick_file()
+    }
   }
 
   /// Handles the file-selection flow for the native Dwarf Fortress picker.
