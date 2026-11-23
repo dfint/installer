@@ -24,7 +24,9 @@ pub fn scan_df() -> Option<PathBuf> {
     PathBuf::from("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Dwarf Fortress\\Dwarf Fortress.exe"),
   ];
   if let Ok(home) = home {
-    pathes.push(home.join(".local/share/Steam/steamapps/common/Dwarf Fortress/dwarfort"));
+    let steam_game_dir = home.join(".local/share/Steam/steamapps/common/Dwarf Fortress");
+    pathes.push(steam_game_dir.join("dwarfort"));
+    pathes.push(steam_game_dir.join("Dwarf Fortress.exe"));
   }
   pathes.into_iter().find(|path| path.exists())
 }
