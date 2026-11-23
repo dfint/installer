@@ -1,4 +1,6 @@
-use eframe::egui::{Align, Button, CentralPanel, ComboBox, FontId, Grid, Image, Layout, Panel, Spinner, TextStyle};
+use eframe::egui::{
+  Align, Button, CentralPanel, ComboBox, FontId, Grid, Image, Layout, Panel, Spinner, TextStyle, ThemePreference,
+};
 use std::path::PathBuf;
 
 use crate::{
@@ -8,6 +10,7 @@ use crate::{
   hook_metadata::HookMetadata,
   localization::{LOCALE, t},
   logic::Message,
+  settings::Settings,
   thread_pool::ThreadPool,
 };
 
@@ -20,6 +23,7 @@ pub enum State {
 
 #[allow(dead_code)]
 pub struct App {
+  pub settings: Settings,
   pub pool: ThreadPool<Message>,
   pub toast: egui_notify::Toasts,
   pub file_picker_requested: bool,
@@ -45,6 +49,7 @@ pub struct App {
 impl Default for App {
   fn default() -> Self {
     Self {
+      settings: Settings::load(),
       pool: ThreadPool::new(),
       toast: egui_notify::Toasts::default().with_anchor(egui_notify::Anchor::BottomRight),
       file_picker_requested: false,
@@ -76,11 +81,9 @@ impl eframe::App for App {
     // handle incoming messages from thread pool
     self.update_state();
     // close event
-    ctx.input(|i| {
-      if i.viewport().close_requested() {
-        self.on_close();
-      }
-    });
+    if ctx.input(|i| i.viewport().close_requested()) {
+      self.on_close();
+    }
     // guards
     if self.df_running {
       self.guard(
@@ -159,6 +162,53 @@ impl eframe::App for App {
                   }
                 }
               });
+            let theme = ctx.options(|options| options.theme_preference);
+            let (fill, tooltip) = match theme {
+              ThemePreference::System => (egui::Color32::TRANSPARENT, t!("System theme")),
+              ThemePreference::Light => (egui::Color32::WHITE, t!("Light theme")),
+              ThemePreference::Dark => (egui::Color32::BLACK, t!("Dark theme")),
+            };
+            let button = ui
+              .add_sized([20., 20.], Button::new(""))
+              .on_hover_text(tooltip);
+            let center = button.rect.center();
+            let radius = 5.;
+            let stroke = ui.style().interact(&button).fg_stroke;
+            ui.painter().circle(center, radius, fill, stroke);
+            if theme == ThemePreference::System {
+              let points = (0..=12)
+                .map(|step| {
+                  let angle = std::f32::consts::PI * (0.5 + step as f32 / 12.);
+                  center + radius * eframe::egui::Vec2::angled(angle)
+                })
+                .collect();
+              ui.painter().add(eframe::egui::Shape::convex_polygon(
+                points,
+                stroke.color,
+                eframe::egui::Stroke::NONE,
+              ));
+            }
+            if button.clicked() {
+              let system_theme = ctx
+                .system_theme()
+                .unwrap_or_else(|| ctx.options(|options| options.fallback_theme));
+              let (opposite, matching) = match system_theme {
+                egui::Theme::Dark => (ThemePreference::Light, ThemePreference::Dark),
+                egui::Theme::Light => (ThemePreference::Dark, ThemePreference::Light),
+              };
+              let next = match theme {
+                ThemePreference::System => opposite,
+                current if current == opposite => matching,
+                _ => ThemePreference::System,
+              };
+              ctx.set_theme(next);
+              self.settings.theme = next.name().into();
+              if let Err(err) = self.settings.save() {
+                self
+                  .toast
+                  .error(format!("{} {err}", t!("Unable to save theme preference.")));
+              }
+            }
           });
         });
       });

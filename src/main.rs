@@ -6,9 +6,9 @@ extern crate serde_derive;
 use anyhow::Result;
 use constants::APP_ICON;
 use eframe::egui;
-// use eframe::egui::{Style, Visuals};
 
 mod app;
+mod cache;
 mod constants;
 mod df_binary;
 mod dict_metadata;
@@ -16,7 +16,7 @@ mod fetch;
 mod hook_metadata;
 mod localization;
 mod logic;
-mod persistent;
+mod settings;
 mod thread_pool;
 mod utils;
 
@@ -33,13 +33,10 @@ fn main() -> Result<(), eframe::Error> {
     "DF localization installer",
     options,
     Box::new(|cc| {
-      // let style = Style {
-      //   visuals: Visuals::light(),
-      //   ..Style::default()
-      // };
-      // cc.egui_ctx.set_style(style);
+      let app = Box::<app::App>::default();
+      cc.egui_ctx.set_theme(app.settings.theme_preference());
       egui_extras::install_image_loaders(&cc.egui_ctx);
-      Ok(Box::<app::App>::default())
+      Ok(app)
     }),
   )
 }
