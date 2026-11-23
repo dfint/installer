@@ -100,7 +100,7 @@ impl App {
     }
   }
 
-  pub fn on_close(&mut self) {
+  pub fn on_close(&mut self, theme: egui::ThemePreference) {
     if self.bin.valid {
       let _ = Store {
         bin: self.bin.to_string(),
@@ -109,6 +109,7 @@ impl App {
         dict_manifest: self.dict_metadata.manifest.clone(),
         vec_dict_manifests: self.dict_metadata.vec_manifests.clone(),
         selected_language: self.selected_language.clone(),
+        theme: theme.name().into(),
       }
       .save();
     }

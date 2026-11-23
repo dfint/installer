@@ -1,4 +1,5 @@
 use anyhow::Result;
+use egui::ThemePreference;
 use std::path::PathBuf;
 
 use crate::{
@@ -8,6 +9,30 @@ use crate::{
   utils::scan_df,
 };
 
+pub fn load_theme() -> ThemePreference {
+  let cache = read_cache().unwrap_or_default();
+  match cache.get("theme").and_then(serde_json::Value::as_str) {
+    Some("light") => ThemePreference::Light,
+    Some("dark") => ThemePreference::Dark,
+    _ => ThemePreference::System,
+  }
+}
+
+fn read_cache() -> Result<serde_json::Map<String, serde_json::Value>> {
+  match std::fs::read_to_string(PATH_CACHE_FILE) {
+    Ok(content) => Ok(serde_json::from_str(&content)?),
+    Err(err) if err.kind() == std::io::ErrorKind::NotFound => Ok(serde_json::Map::new()),
+    Err(err) => Err(err.into()),
+  }
+}
+
+pub fn save_theme(theme: ThemePreference) -> Result<()> {
+  let mut cache = read_cache()?;
+  cache.insert("theme".into(), theme.name().into());
+  std::fs::write(PATH_CACHE_FILE, serde_json::to_string_pretty(&cache)?)?;
+  Ok(())
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct Store {
   pub bin: String,
@@ -16,6 +41,8 @@ pub struct Store {
   pub dict_manifest: DictManifest,
   pub vec_dict_manifests: Vec<DictManifest>,
   pub selected_language: String,
+  #[serde(default)]
+  pub theme: String,
 }
 
 impl Store {

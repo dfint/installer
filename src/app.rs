@@ -10,6 +10,7 @@ use crate::{
   hook_metadata::HookMetadata,
   localization::{LOCALE, t},
   logic::Message,
+  persistent::save_theme,
   thread_pool::ThreadPool,
 };
 
@@ -78,11 +79,9 @@ impl eframe::App for App {
     // handle incoming messages from thread pool
     self.update_state();
     // close event
-    ctx.input(|i| {
-      if i.viewport().close_requested() {
-        self.on_close();
-      }
-    });
+    if ctx.input(|i| i.viewport().close_requested()) {
+      self.on_close(ctx.options(|options| options.theme_preference));
+    }
     // guards
     if self.df_running {
       self.guard(
@@ -201,6 +200,11 @@ impl eframe::App for App {
                 _ => ThemePreference::System,
               };
               ctx.set_theme(next);
+              if let Err(err) = save_theme(next) {
+                self
+                  .toast
+                  .error(format!("{} {err}", t!("Unable to save theme preference.")));
+              }
             }
           });
         });
