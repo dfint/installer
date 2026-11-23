@@ -18,6 +18,7 @@
   "Install": "Düzenlemek",
   "Update": "Güncelle",
   "Open Dwarf Fortress executable": "Dwarf Fortress çalıştırabilir dosyasını aç",
+  "Selected file is not a valid Dwarf Fortress executable.": "Seçilen dosya geçerli bir Dwarf Fortress yürütülebilir dosyası değil.",
   "This DF version is not supported": "Bu DF sürümü desteklenmiyor",
   "Unable to fetch hook metadata...": "Bağlantı üstverileri getirilemiyor",
   "Hook updated": "Bağlantı güncellendi",

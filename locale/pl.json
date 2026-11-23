@@ -18,6 +18,7 @@
   "Install": "Zainstalować",
   "Update": "Aktualizacja",
   "Open Dwarf Fortress executable": "Otwórz plik egzekucyjny Dwarf Fortress",
+  "Selected file is not a valid Dwarf Fortress executable.": "Wybrany plik nie jest poprawnym plikiem wykonywalnym gry Dwarf Fortress.",
   "This DF version is not supported": "Ta wersja DF nie jest wspierana",
   "Unable to fetch hook metadata...": "Nie można pobrać metadanych hook'a...",
   "Hook updated": "Hook zaktualizowany",

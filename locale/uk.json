@@ -18,6 +18,7 @@
   "Install": "Встановити",
   "Update": "Оновити",
   "Open Dwarf Fortress executable": "Оберіть виконуваний файл Dwarf Fortress",
+  "Selected file is not a valid Dwarf Fortress executable.": "Вибраний файл не є коректним виконуваним файлом Dwarf Fortress.",
   "This DF version is not supported": "Ця версія гри не підтримується",
   "Unable to fetch hook metadata...": "Не вдалося отримати метадані хука...",
   "Hook updated": "Хук оновлений",

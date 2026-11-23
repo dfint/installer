@@ -18,6 +18,7 @@
   "Install": "Instalovat",
   "Update": "Aktualizace",
   "Open Dwarf Fortress executable": "Otevřít spouštěcí soubor Dwarf Fortress",
+  "Selected file is not a valid Dwarf Fortress executable.": "Vybraný soubor není platný spustitelný soubor hry Dwarf Fortress.",
   "This DF version is not supported": "Tato verze DF neni podporovaná",
   "Unable to fetch hook metadata...": "Nelze načíst  hook metadata...",
   "Hook updated": "Hook aktualizován",
