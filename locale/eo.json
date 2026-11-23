@@ -18,6 +18,7 @@
   "Install": "Instali",
   "Update": "Ĝisdatigo",
   "Open Dwarf Fortress executable": "Malfermu Nan-Fortikaĵan rul-dosieron",
+  "Selected file is not a valid Dwarf Fortress executable.": "La elektita dosiero ne estas valida plenumebla dosiero de Dwarf Fortress.",
   "This DF version is not supported": "Tiun Nan-Fortikaĵan version oni ne regas.",
   "Unable to fetch hook metadata...": "Ne sukcesis trafi hokajn metadatumojn…",
   "Hook updated": "Hoko ĝisdatigita",
