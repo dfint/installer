@@ -4,13 +4,13 @@ use std::path::PathBuf;
 
 use crate::{
   app::{App, State},
+  cache::Cache,
   constants::*,
   df_binary::DfBinary,
   dict_metadata::DictMetadata,
   fetch::batch_download_to_file,
   hook_metadata::HookMetadata,
   localization::{LOCALE, t},
-  persistent::Store,
   utils::*,
 };
 
@@ -29,7 +29,7 @@ pub enum Message {
   DictMetadataLoaded(Result<DictMetadata>),
   HookUpdated(Result<()>),
   DictUpdated(Result<()>),
-  StoreLoaded((PathBuf, String, HookMetadata, DictMetadata)),
+  StartupDataLoaded((PathBuf, String, HookMetadata, DictMetadata)),
   DfRunning(bool),
 }
 
@@ -100,16 +100,20 @@ impl App {
     }
   }
 
-  pub fn on_close(&mut self, theme: egui::ThemePreference) {
+  pub fn on_close(&mut self) {
     if self.bin.valid {
-      let _ = Store {
-        bin: self.bin.to_string(),
+      self.settings.bin = self.bin.path.clone();
+      self
+        .settings
+        .selected_language
+        .clone_from(&self.selected_language);
+    }
+    if self.settings.save().is_ok() && self.bin.valid {
+      let _ = Cache {
         hook_manifest: self.hook_metadata.manifest.clone(),
         vec_hook_manifests: self.hook_metadata.vec_manifests.clone(),
         dict_manifest: self.dict_metadata.manifest.clone(),
         vec_dict_manifests: self.dict_metadata.vec_manifests.clone(),
-        selected_language: self.selected_language.clone(),
-        theme: theme.name().into(),
       }
       .save();
     }
@@ -193,7 +197,7 @@ impl App {
           };
           self.loading -= 1;
         }
-        Message::StoreLoaded((bin, selected_language, hook_metadata, dict_metadata)) => {
+        Message::StartupDataLoaded((bin, selected_language, hook_metadata, dict_metadata)) => {
           self.bin = DfBinary::new(bin);
           self.selected_language = selected_language;
           self.hook_metadata = hook_metadata;
@@ -238,7 +242,20 @@ impl App {
   pub fn on_start(&mut self) {
     self.state = State::Loading;
     self.pool.execute(is_df_running(), Message::DfRunning);
-    self.pool.execute(Store::new(), Message::StoreLoaded);
+    let saved_bin = self.settings.bin.clone();
+    let selected_language = self.settings.selected_language.clone();
+    self.pool.execute(
+      async move {
+        let bin = if saved_bin.exists() {
+          saved_bin
+        } else {
+          scan_df().unwrap_or_else(|| std::env::current_dir().unwrap())
+        };
+        let (hook_metadata, dict_metadata) = Cache::load_metadata();
+        (bin, selected_language, hook_metadata, dict_metadata)
+      },
+      Message::StartupDataLoaded,
+    );
   }
 
   /// Shows a warning identified by `name` and requests window closure when OK is clicked.

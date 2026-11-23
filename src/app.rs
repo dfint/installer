@@ -10,7 +10,7 @@ use crate::{
   hook_metadata::HookMetadata,
   localization::{LOCALE, t},
   logic::Message,
-  persistent::save_theme,
+  settings::Settings,
   thread_pool::ThreadPool,
 };
 
@@ -23,6 +23,7 @@ pub enum State {
 
 #[allow(dead_code)]
 pub struct App {
+  pub settings: Settings,
   pub pool: ThreadPool<Message>,
   pub toast: egui_notify::Toasts,
   pub file_picker_requested: bool,
@@ -48,6 +49,7 @@ pub struct App {
 impl Default for App {
   fn default() -> Self {
     Self {
+      settings: Settings::load(),
       pool: ThreadPool::new(),
       toast: egui_notify::Toasts::default().with_anchor(egui_notify::Anchor::BottomRight),
       file_picker_requested: false,
@@ -80,7 +82,7 @@ impl eframe::App for App {
     self.update_state();
     // close event
     if ctx.input(|i| i.viewport().close_requested()) {
-      self.on_close(ctx.options(|options| options.theme_preference));
+      self.on_close();
     }
     // guards
     if self.df_running {
@@ -200,7 +202,8 @@ impl eframe::App for App {
                 _ => ThemePreference::System,
               };
               ctx.set_theme(next);
-              if let Err(err) = save_theme(next) {
+              self.settings.theme = next.name().into();
+              if let Err(err) = self.settings.save() {
                 self
                   .toast
                   .error(format!("{} {err}", t!("Unable to save theme preference.")));

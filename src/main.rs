@@ -8,6 +8,7 @@ use constants::APP_ICON;
 use eframe::egui;
 
 mod app;
+mod cache;
 mod constants;
 mod df_binary;
 mod dict_metadata;
@@ -15,7 +16,7 @@ mod fetch;
 mod hook_metadata;
 mod localization;
 mod logic;
-mod persistent;
+mod settings;
 mod thread_pool;
 mod utils;
 
@@ -32,9 +33,10 @@ fn main() -> Result<(), eframe::Error> {
     "DF localization installer",
     options,
     Box::new(|cc| {
-      cc.egui_ctx.set_theme(persistent::load_theme());
+      let app = Box::<app::App>::default();
+      cc.egui_ctx.set_theme(app.settings.theme_preference());
       egui_extras::install_image_loaders(&cc.egui_ctx);
-      Ok(Box::<app::App>::default())
+      Ok(app)
     }),
   )
 }

@@ -11,6 +11,7 @@ pub const ORIGINAL_FONT: &'static [u8; 1568] = include_bytes!("../assets/origina
 pub const ORIGINAL_FONT_CHECKSUM: u32 = 359_782_074;
 
 pub const PATH_CACHE_FILE: &'static str = "./dfint-installer.cache";
+pub const PATH_SETTINGS_FILE: &'static str = "./dfint-installer.conf";
 pub const PATH_ERROR_FILE: &'static str = "./dfint-error.log";
 
 pub const BASE_URL: [&'static str; 2] = [

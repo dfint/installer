@@ -1,5 +1,6 @@
 /target
 dfint-installer.cache
+dfint-installer.conf
 dfint-error.log
 tx
 *.pyc
