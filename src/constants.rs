@@ -8,6 +8,7 @@ pub const TRANSIFEX_ICON: eframe::egui::widgets::ImageSource<'static> =
   eframe::egui::include_image!("../assets/transifex.png");
 pub const APP_ICON: &'static [u8; 1980] = include_bytes!("../assets/df.png");
 pub const ORIGINAL_FONT: &'static [u8; 1568] = include_bytes!("../assets/original_font.png");
+pub const ORIGINAL_FONT_CHECKSUM: u32 = 359_782_074;
 
 pub const PATH_CACHE_FILE: &'static str = "./dfint-installer.cache";
 pub const PATH_ERROR_FILE: &'static str = "./dfint-error.log";
@@ -35,6 +36,3 @@ pub const COLOR_UPDATE_AVAILABLE: Color32 = Color32::from_rgb(230, 184, 0);
 pub const COLOR_CHOOSE_LANGUAGE: Color32 = Color32::from_rgb(230, 184, 0);
 pub const COLOR_LOADING: Color32 = Color32::from_rgb(66, 133, 244);
 pub const COLOR_ERROR: Color32 = Color32::from_rgb(211, 47, 47);
-
-pub const NO_HOOK_CHECKSUM: u32 = 4282505490;
-pub const NO_DICT_CHECKSUM: u32 = 1591420153;
