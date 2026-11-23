@@ -16,13 +16,17 @@ pub fn checksum_for_files(vec: Vec<PathBuf>) -> Result<u32> {
 
 pub fn scan_df() -> Option<PathBuf> {
   let current = std::env::current_dir().unwrap();
-  let pathes = [
+  let home = std::env::var("HOME").map(PathBuf::from);
+
+  let mut pathes = vec![
     current.join("Dwarf Fortress.exe"),
     current.join("dwarfort"),
     PathBuf::from("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Dwarf Fortress\\Dwarf Fortress.exe"),
-    PathBuf::from("~/.local/share/Steam/steamapps/common/Dwarf Fortress/dwarfort"),
   ];
-  pathes.iter().find(|path| path.exists()).cloned()
+  if let Ok(home) = home {
+    pathes.push(home.join(".local/share/Steam/steamapps/common/Dwarf Fortress/dwarfort"));
+  }
+  pathes.into_iter().find(|path| path.exists())
 }
 
 pub async fn is_df_running() -> bool {
