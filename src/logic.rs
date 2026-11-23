@@ -58,7 +58,7 @@ impl App {
     if cfg!(windows) {
       dialog.add_filter("Executable", &["exe"]).pick_file()
     } else {
-      dialog.add_filter("Executable", &["*"]).pick_file()
+      dialog.pick_file()
     }
   }
 
