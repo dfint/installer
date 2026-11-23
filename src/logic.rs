@@ -34,14 +34,23 @@ pub enum Message {
 }
 
 impl App {
-  /// Returns whether neither the hook nor dictionary is installed.
+  /// Returns whether no localization files or modified font are present.
   pub fn clean_installation(&self) -> bool {
-    self.hook_checksum == NO_HOOK_CHECKSUM && self.dict_checksum == NO_DICT_CHECKSUM
+    !self.any_localization_files_present()
   }
 
-  /// Returns whether any localization files are present.
+  /// Returns whether localization files or a modified font are present.
   pub fn any_localization_files_present(&self) -> bool {
-    self.hook_checksum != NO_HOOK_CHECKSUM || self.dict_checksum != NO_DICT_CHECKSUM
+    self.bin.lib_path.is_file()
+      || self.bin.dir.join(PATH_CONFIG).is_file()
+      || self.bin.dir.join(PATH_OFFSETS).is_file()
+      || self.bin.dir.join(PATH_DICT).is_file()
+      || self.bin.dir.join(PATH_ENCODING).is_file()
+      || self.font_is_modified()
+  }
+
+  fn font_is_modified(&self) -> bool {
+    std::fs::read(self.bin.dir.join(PATH_FONT)).is_ok_and(|font| crc32fast::hash(&font) != ORIGINAL_FONT_CHECKSUM)
   }
 
   /// Shows a native file picker filtered to Dwarf Fortress executables.
