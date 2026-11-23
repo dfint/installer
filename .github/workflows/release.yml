@@ -39,9 +39,10 @@ jobs:
       - name: Package files
         run: |
           cd release/
-          zip dfint-installer-win-${{ env.VERSION }}.zip dfint-installer.exe
+          cp ../assets/DejaVuSans-LICENSE.txt .
+          zip dfint-installer-win-${{ env.VERSION }}.zip dfint-installer.exe DejaVuSans-LICENSE.txt
           chmod +x dfint-installer
-          tar -czf dfint-installer-lin-${{ env.VERSION }}.tar.gz dfint-installer
+          tar -czf dfint-installer-lin-${{ env.VERSION }}.tar.gz dfint-installer DejaVuSans-LICENSE.txt
 
       - name: Attestation
         uses: actions/attest-build-provenance@v4
