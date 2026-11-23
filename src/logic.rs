@@ -75,7 +75,12 @@ impl App {
     self.file_picker_requested = false;
 
     if let Some(file) = self.file_dialog(Some(self.bin.dir.clone())) {
-      self.bin = DfBinary::new(file);
+      let bin = DfBinary::new(file);
+      if !bin.valid {
+        error!(self, t!("Selected file is not a valid Dwarf Fortress executable."));
+        return;
+      }
+      self.bin = bin;
       self.hook_checksum = self.local_hook_checksum().unwrap_or(0);
       self.dict_checksum = self.local_dict_checksum().unwrap_or(0);
       self.hook_metadata.pick_df_checksum(self.bin.checksum);
