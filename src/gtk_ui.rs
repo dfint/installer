@@ -1,6 +1,7 @@
 use gtk4::{self as gtk, gio, glib, prelude::*};
 use std::{
   cell::{Cell, RefCell},
+  collections::HashMap,
   io::Cursor,
   rc::Rc,
   time::Duration,
@@ -12,8 +13,7 @@ use crate::{
   df_binary::OS,
   localization::{LOCALE, t},
   ui_layout::{
-    CONTENT_ROWS, ContentColumn, ContentRow, FOOTER_LEADING_ITEMS, FOOTER_TRAILING_ITEMS, FooterItem, FooterLinkTarget,
-    INSTALL_HEIGHT, INSTALL_WIDTH, WINDOW_HEIGHT, WINDOW_WIDTH,
+    ContentColumn, ContentRow, ControlId, FooterItem, FooterLinkTarget, INSTALL_HEIGHT, INSTALL_WIDTH, INSTALLER_LAYOUT,
   },
 };
 
@@ -76,8 +76,8 @@ impl Window {
     let window = gtk::ApplicationWindow::builder()
       .application(application)
       .title("DF localization installer")
-      .default_width(WINDOW_WIDTH)
-      .default_height(WINDOW_HEIGHT)
+      .default_width(INSTALLER_LAYOUT.width)
+      .default_height(INSTALLER_LAYOUT.height)
       .build();
     let root = gtk::Box::new(gtk::Orientation::Vertical, 0);
     window.set_child(Some(&root));
@@ -143,49 +143,49 @@ impl Window {
     notice.set_valign(gtk::Align::End);
     notice.set_vexpand(true);
     notice.set_margin_top(6);
+    let widgets: HashMap<_, &gtk::Widget> = HashMap::from([
+      (ControlId::GameDetailsHeading, game_title.upcast_ref()),
+      (ControlId::GamePathLabel, path_title.upcast_ref()),
+      (ControlId::GamePathValue, path.upcast_ref()),
+      (ControlId::BrowseExecutable, browse.upcast_ref()),
+      (ControlId::GameVersionLabel, version_title.upcast_ref()),
+      (ControlId::GameVersionValue, version_row.upcast_ref()),
+      (ControlId::GameChecksumLabel, checksum_title.upcast_ref()),
+      (ControlId::GameChecksumValue, checksum.upcast_ref()),
+      (ControlId::HookHeading, hook_title.upcast_ref()),
+      (ControlId::HookVersionLabel, hook_version.upcast_ref()),
+      (ControlId::HookInstalledVersion, hook.local.upcast_ref()),
+      (ControlId::HookAvailableVersion, hook.available.upcast_ref()),
+      (ControlId::HookUpdateStatus, hook.status.upcast_ref()),
+      (ControlId::DictionaryHeading, dict_title.upcast_ref()),
+      (ControlId::DictionaryLanguageSelector, languages.upcast_ref()),
+      (ControlId::DictionaryInstalledVersion, dict.local.upcast_ref()),
+      (ControlId::DictionaryAvailableVersion, dict.available.upcast_ref()),
+      (ControlId::DictionaryUpdateStatus, dict.status.upcast_ref()),
+      (ControlId::InstallOrUpdate, actions.upcast_ref()),
+      (ControlId::OperationNotice, notice.upcast_ref()),
+    ]);
     let mut row = 0;
-    let label_column = ContentColumn::FieldLabel.index();
-    let local = ContentColumn::PrimaryValue.index();
-    let browse_column = ContentColumn::BrowseExecutableButton.index();
-    for item in CONTENT_ROWS {
-      match item {
-        ContentRow::GameDetailsHeading => {
-          add_section(&grid, row, &game_title);
-          row += 1;
+    for item in INSTALLER_LAYOUT.content_rows() {
+      let is_heading = matches!(item, ContentRow::Heading(_));
+      for cell in item.cells() {
+        let widget = widgets[&cell.control];
+        if is_heading && row > 0 {
+          widget.set_margin_top(12);
         }
-        ContentRow::HookHeading => {
-          add_section(&grid, row, &hook_title);
-          row += 1;
-        }
-        ContentRow::DictionaryHeading => {
-          add_section(&grid, row, &dict_title);
-          row += 1;
-        }
-        ContentRow::GameExecutablePath => {
-          grid.attach(&path_title, label_column, row, 1, 1);
-          grid.attach(&path, local, row, browse_column - local, 1);
-          grid.attach(&browse, browse_column, row, 1, 1);
-        }
-        ContentRow::GameVersion => {
-          grid.attach(&version_title, label_column, row, 1, 1);
-          grid.attach(&version_row, local, row, ContentColumn::COUNT - local, 1);
-        }
-        ContentRow::GameChecksum => {
-          grid.attach(&checksum_title, label_column, row, 1, 1);
-          grid.attach(&checksum, local, row, ContentColumn::COUNT - local, 1);
-        }
-        ContentRow::HookVersionStatus => {
-          grid.attach(&hook_version, label_column, row, 1, 1);
-          hook.attach(&grid, row);
-        }
-        ContentRow::DictionaryLanguageAndStatus => {
-          grid.attach(&languages, label_column, row, 1, 1);
-          dict.attach(&grid, row);
-        }
-        ContentRow::InstallOrUpdateAction => grid.attach(&actions, 0, row, ContentColumn::COUNT, 1),
-        ContentRow::OperationNotice => grid.attach(&notice, 0, row, ContentColumn::COUNT, 1),
+        grid.attach(widget, cell.column.index(), row, cell.column_span, 1);
       }
       row += 1;
+      if is_heading {
+        grid.attach(
+          &gtk::Separator::new(gtk::Orientation::Horizontal),
+          0,
+          row,
+          ContentColumn::COUNT,
+          1,
+        );
+        row += 1;
+      }
     }
 
     root.append(&gtk::Separator::new(gtk::Orientation::Horizontal));
@@ -210,18 +210,35 @@ impl Window {
     build.add_css_class("dim-label");
     build.set_xalign(0.0);
     let remove = gtk::Button::from_icon_name("user-trash-symbolic");
-    let append = |item| match item {
-      FooterItem::ExternalLink(FooterLinkTarget::ReportBug) => footer.append(&bug_link),
-      FooterItem::ExternalLink(FooterLinkTarget::HelpWithTranslation) => footer.append(&translation_link),
-      FooterItem::InstallerVersion => footer.append(&build),
-      FooterItem::InterfaceLanguageSelector => footer.append(&locale),
-      FooterItem::RemoveLocalizationButton => footer.append(&remove),
-    };
-    FOOTER_LEADING_ITEMS.into_iter().for_each(append);
+    let footer_widgets: HashMap<_, &gtk::Widget> = HashMap::from([
+      (
+        FooterItem::ExternalLink(FooterLinkTarget::ReportBug),
+        bug_link.upcast_ref(),
+      ),
+      (
+        FooterItem::ExternalLink(FooterLinkTarget::HelpWithTranslation),
+        translation_link.upcast_ref(),
+      ),
+      (FooterItem::InstallerVersion, build.upcast_ref()),
+      (FooterItem::InterfaceLanguageSelector, locale.upcast_ref()),
+      (FooterItem::RemoveLocalizationButton, remove.upcast_ref()),
+    ]);
+    let append = |item| footer.append(footer_widgets[&item]);
+    INSTALLER_LAYOUT
+      .footer
+      .leading_items
+      .iter()
+      .copied()
+      .for_each(append);
     let spacer = gtk::Box::new(gtk::Orientation::Horizontal, 0);
     spacer.set_hexpand(true);
     footer.append(&spacer);
-    FOOTER_TRAILING_ITEMS.into_iter().for_each(append);
+    INSTALLER_LAYOUT
+      .footer
+      .trailing_items
+      .iter()
+      .copied()
+      .for_each(append);
     root.append(&footer);
 
     let ui = Rc::new(Self {
@@ -492,20 +509,6 @@ fn set_heading(label: &gtk::Label, text: &str) {
   label.set_markup(&format!("<big>{}</big>", glib::markup_escape_text(text)));
 }
 
-fn add_section(grid: &gtk::Grid, row: i32, title: &gtk::Label) {
-  if row > 0 {
-    title.set_margin_top(12);
-  }
-  grid.attach(title, 0, row, ContentColumn::COUNT, 1);
-  grid.attach(
-    &gtk::Separator::new(gtk::Orientation::Horizontal),
-    0,
-    row + 1,
-    ContentColumn::COUNT,
-    1,
-  );
-}
-
 struct StatusRow {
   local: gtk::Label,
   available: gtk::Label,
@@ -526,13 +529,6 @@ impl StatusRow {
       available,
       status,
     }
-  }
-
-  fn attach(&self, grid: &gtk::Grid, row: i32) {
-    grid.attach(&self.local, ContentColumn::PrimaryValue.index(), row, 1, 1);
-    grid.attach(&self.available, ContentColumn::AvailableVersion.index(), row, 1, 1);
-    let status = ContentColumn::UpdateStatus.index();
-    grid.attach(&self.status, status, row, ContentColumn::COUNT - status, 1);
   }
 
   fn refresh(&self, value: &ComponentStatus) {

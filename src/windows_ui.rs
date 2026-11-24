@@ -31,8 +31,8 @@ use crate::{
   df_binary::OS,
   localization::{LOCALE, t},
   ui_layout::{
-    CONTENT_ROWS, ContentColumn, ContentRow, FOOTER_LEADING_ITEMS, FOOTER_TRAILING_ITEMS, FooterItem, FooterLinkTarget,
-    INSTALL_HEIGHT, INSTALL_WIDTH, WINDOW_HEIGHT, WINDOW_WIDTH,
+    ContentColumn, ContentRow, ControlId, FooterItem, FooterLinkTarget, INSTALL_HEIGHT, INSTALL_WIDTH,
+    INSTALLER_LAYOUT, SectionHeading, SectionRow,
   },
 };
 
@@ -89,8 +89,8 @@ pub fn run() -> anyhow::Result<()> {
     let mut bounds = RECT {
       left: 0,
       top: 0,
-      right: scale(WINDOW_WIDTH, dpi),
-      bottom: scale(WINDOW_HEIGHT, dpi),
+      right: scale(INSTALLER_LAYOUT.width, dpi),
+      bottom: scale(INSTALLER_LAYOUT.height, dpi),
     };
     AdjustWindowRectExForDpi(&mut bounds, style, 0, 0, dpi);
     let window = CreateWindowExW(
@@ -328,18 +328,13 @@ impl Window {
         bounds,
       )
     };
-    let status_row = |y, height| {
+    let status_row = |[installed, available, status]: [ControlId; 3], y_offset| {
+      let [x, y, width, height] = control_bounds(status, y_offset, 34);
       Ok::<_, anyhow::Error>(StatusRow {
-        local: label([column_x(ContentColumn::PrimaryValue), y, 145, 24])?,
-        available: label([column_x(ContentColumn::AvailableVersion), y, 145, 24])?,
-        icon: create(
-          w!("STATIC"),
-          "",
-          SS_ICON,
-          0,
-          [column_x(ContentColumn::UpdateStatus), y, 16, 16],
-        )?,
-        status: label([column_x(ContentColumn::UpdateStatus) + 22, y, 213, height])?,
+        local: label(control_bounds(installed, y_offset, 24))?,
+        available: label(control_bounds(available, y_offset, 24))?,
+        icon: create(w!("STATIC"), "", SS_ICON, 0, [x, y, 16, 16])?,
+        status: label([x + 22, y, width - 22, height])?,
       })
     };
 
@@ -351,125 +346,48 @@ impl Window {
     };
 
     let result = (|| {
-      heading(
-        "Dwarf Fortress",
-        [
-          column_x(ContentColumn::FieldLabel),
-          row_y(ContentRow::GameDetailsHeading),
-          500,
-          22,
-        ],
-      )?;
-      separator(row_y(ContentRow::GameDetailsHeading) + 25)?;
-      let path_title = label([
-        column_x(ContentColumn::FieldLabel),
-        row_y(ContentRow::GameExecutablePath) + 4,
-        150,
-        22,
-      ])?;
+      use ControlId::*;
+      heading("Dwarf Fortress", control_bounds(GameDetailsHeading, 0, 22))?;
+      separator(row_y(ContentRow::Heading(SectionHeading::GameDetails)) + 25)?;
+      let path_title = label(control_bounds(GamePathLabel, 4, 22))?;
+      let [x, y, width, height] = control_bounds(GamePathValue, 1, 23);
       let path = create(
         w!("EDIT"),
         "",
         WS_BORDER | WS_TABSTOP | (ES_READONLY | ES_AUTOHSCROLL) as u32,
         0,
-        [
-          column_x(ContentColumn::PrimaryValue),
-          row_y(ContentRow::GameExecutablePath) + 1,
-          505,
-          23,
-        ],
+        [x, y, width - 6, height],
       )?;
-      let browse = button(
-        BROWSE,
-        [
-          column_x(ContentColumn::BrowseExecutableButton),
-          row_y(ContentRow::GameExecutablePath),
-          35,
-          25,
-        ],
-      )?;
+      let browse = button(BROWSE, control_bounds(BrowseExecutable, 0, 25))?;
       set_text(browse, "…");
-      let version_title = label([
-        column_x(ContentColumn::FieldLabel),
-        row_y(ContentRow::GameVersion),
-        150,
-        22,
-      ])?;
-      let version = label([
-        column_x(ContentColumn::PrimaryValue),
-        row_y(ContentRow::GameVersion),
-        100,
-        22,
-      ])?;
+      let version_title = label(control_bounds(GameVersionLabel, 0, 22))?;
+      let version = label(control_bounds(GameVersionValue, 0, 22))?;
       let platform_icon = create(w!("STATIC"), "", SS_ICON, 0, [0, 0, 16, 16])?;
       let platform = label([0, 0, 425, 22])?;
-      let checksum_title = label([
-        column_x(ContentColumn::FieldLabel),
-        row_y(ContentRow::GameChecksum),
-        150,
-        22,
-      ])?;
-      let checksum = label([
-        column_x(ContentColumn::PrimaryValue),
-        row_y(ContentRow::GameChecksum),
-        546,
-        22,
-      ])?;
+      let checksum_title = label(control_bounds(GameChecksumLabel, 0, 22))?;
+      let checksum = label(control_bounds(GameChecksumValue, 0, 22))?;
 
-      let hook_title = heading(
-        "",
-        [
-          column_x(ContentColumn::FieldLabel),
-          row_y(ContentRow::HookHeading),
-          400,
-          23,
-        ],
-      )?;
-      separator(row_y(ContentRow::HookHeading) + 28)?;
-      let hook_version = label([
-        column_x(ContentColumn::FieldLabel),
-        row_y(ContentRow::HookVersionStatus),
-        150,
-        24,
-      ])?;
-      let hook = status_row(row_y(ContentRow::HookVersionStatus), 34)?;
+      let hook_title = heading("", control_bounds(HookHeading, 0, 23))?;
+      separator(row_y(ContentRow::Heading(SectionHeading::Hook)) + 28)?;
+      let hook_version = label(control_bounds(HookVersionLabel, 0, 24))?;
+      let hook = status_row([HookInstalledVersion, HookAvailableVersion, HookUpdateStatus], 0)?;
 
-      let dict_title = heading(
-        "",
+      let dict_title = heading("", control_bounds(DictionaryHeading, 0, 22))?;
+      separator(row_y(ContentRow::Heading(SectionHeading::Dictionary)) + 27)?;
+      let [x, y, width, height] = control_bounds(DictionaryLanguageSelector, 0, 190);
+      let languages = combo(LANGUAGE, [x, y, width - 11, height])?;
+      let dict = status_row(
         [
-          column_x(ContentColumn::FieldLabel),
-          row_y(ContentRow::DictionaryHeading),
-          500,
-          22,
+          DictionaryInstalledVersion,
+          DictionaryAvailableVersion,
+          DictionaryUpdateStatus,
         ],
+        4,
       )?;
-      separator(row_y(ContentRow::DictionaryHeading) + 27)?;
-      let languages = combo(
-        LANGUAGE,
-        [
-          column_x(ContentColumn::FieldLabel),
-          row_y(ContentRow::DictionaryLanguageAndStatus),
-          145,
-          190,
-        ],
-      )?;
-      let dict = status_row(row_y(ContentRow::DictionaryLanguageAndStatus) + 4, 34)?;
 
-      let install = button(
-        INSTALL,
-        [
-          (WINDOW_WIDTH - INSTALL_WIDTH) / 2,
-          row_y(ContentRow::InstallOrUpdateAction),
-          INSTALL_WIDTH,
-          INSTALL_HEIGHT,
-        ],
-      )?;
-      let notice = label([
-        column_x(ContentColumn::FieldLabel),
-        row_y(ContentRow::OperationNotice),
-        702,
-        39,
-      ])?;
+      let [x, y, width, height] = control_bounds(InstallOrUpdate, 0, INSTALL_HEIGHT);
+      let install = button(INSTALL, [x + (width - INSTALL_WIDTH) / 2, y, INSTALL_WIDTH, height])?;
+      let notice = label(control_bounds(OperationNotice, 0, 39))?;
       let bar = create(STATUSCLASSNAMEW, "", WS_CLIPCHILDREN, 0, [0, 0, 0, 0])?;
       unsafe {
         let style = GetWindowLongPtrW(bar, GWL_EXSTYLE);
@@ -592,22 +510,16 @@ impl Window {
 
   fn place_version(&self, version: &str, show_icon: bool) {
     let width = text_width(self.version, self.font, version) + scale(4, self.dpi);
-    let x = scale(column_x(ContentColumn::PrimaryValue), self.dpi);
+    let [left, top, available_width, _] = control_bounds(ControlId::GameVersionValue, 0, 22);
+    let x = scale(left, self.dpi);
     let icon_size = scale(16, self.dpi);
     let platform_x = x + width + if show_icon { scale(21, self.dpi) } else { 0 };
     unsafe {
-      MoveWindow(
-        self.version,
-        x,
-        scale(row_y(ContentRow::GameVersion), self.dpi),
-        width,
-        scale(22, self.dpi),
-        1,
-      );
+      MoveWindow(self.version, x, scale(top, self.dpi), width, scale(22, self.dpi), 1);
       MoveWindow(
         self.platform_icon,
         x + width,
-        scale(row_y(ContentRow::GameVersion) - 2, self.dpi),
+        scale(top - 2, self.dpi),
         icon_size,
         icon_size,
         1,
@@ -616,8 +528,8 @@ impl Window {
       MoveWindow(
         self.platform,
         platform_x,
-        scale(row_y(ContentRow::GameVersion), self.dpi),
-        scale(711, self.dpi) - platform_x,
+        scale(top, self.dpi),
+        (scale(left + available_width, self.dpi) - platform_x).max(0),
         scale(22, self.dpi),
         1,
       );
@@ -626,7 +538,7 @@ impl Window {
 
   fn refresh_footer(&self, show_remove: bool) {
     let mut left = scale(9, self.dpi);
-    for item in FOOTER_LEADING_ITEMS {
+    for item in INSTALLER_LAYOUT.footer.leading_items.iter().copied() {
       let width = self.footer_width(item, show_remove);
       if width > 0 {
         self.place_footer_item(item, left, width);
@@ -634,8 +546,8 @@ impl Window {
       }
     }
 
-    let mut right = scale(WINDOW_WIDTH - 9, self.dpi);
-    for item in FOOTER_TRAILING_ITEMS.into_iter().rev() {
+    let mut right = scale(INSTALLER_LAYOUT.width - 9, self.dpi);
+    for item in INSTALLER_LAYOUT.footer.trailing_items.iter().copied().rev() {
       let width = self.footer_width(item, show_remove);
       if width > 0 {
         right -= width;
@@ -914,27 +826,40 @@ fn set_text(control: HWND, text: &str) {
 
 fn row_y(row: ContentRow) -> i32 {
   // Native row heights include room for the controls and the gap before the next row.
-  12 + CONTENT_ROWS
-    .iter()
-    .take_while(|&&item| item != row)
+  12 + INSTALLER_LAYOUT
+    .content_rows()
+    .take_while(|&item| item != row)
     .map(|item| match item {
-      ContentRow::GameDetailsHeading => 32,
-      ContentRow::GameExecutablePath => 33,
-      ContentRow::GameVersion => 24,
-      ContentRow::GameChecksum => 39,
-      ContentRow::HookHeading => 38,
-      ContentRow::HookVersionStatus => 40,
-      ContentRow::DictionaryHeading => 35,
-      ContentRow::DictionaryLanguageAndStatus => 53,
+      ContentRow::Heading(SectionHeading::GameDetails) => 32,
+      ContentRow::SectionRow(SectionRow::GameExecutablePath) => 33,
+      ContentRow::SectionRow(SectionRow::GameVersion) => 24,
+      ContentRow::SectionRow(SectionRow::GameChecksum) => 39,
+      ContentRow::Heading(SectionHeading::Hook) => 38,
+      ContentRow::SectionRow(SectionRow::HookVersionStatus) => 40,
+      ContentRow::Heading(SectionHeading::Dictionary) => 35,
+      ContentRow::SectionRow(SectionRow::DictionaryLanguageAndStatus) => 53,
       ContentRow::InstallOrUpdateAction => 56,
       ContentRow::OperationNotice => 39,
     })
     .sum::<i32>()
 }
 
-fn column_x(column: ContentColumn) -> i32 {
-  const STARTS: [i32; ContentColumn::COUNT as usize] = [9, 165, 320, 475, 676];
-  STARTS[column.index() as usize]
+fn control_bounds(control: ControlId, y_offset: i32, height: i32) -> [i32; 4] {
+  const EDGES: [i32; ContentColumn::COUNT as usize + 1] = [9, 165, 320, 475, 676, 711];
+  let (row, cell) = INSTALLER_LAYOUT
+    .content_rows()
+    .find_map(|row| {
+      row
+        .cells()
+        .iter()
+        .find(|cell| cell.control == control)
+        .map(|cell| (row, cell))
+    })
+    .unwrap_or_else(|| panic!("Missing layout cell for {control:?}"));
+  let column = cell.column.index() as usize;
+  let left = EDGES[column];
+  let right = EDGES[column + cell.column_span as usize];
+  [left, row_y(row) + y_offset, right - left, height]
 }
 
 fn scale(value: i32, dpi: u32) -> i32 {
