@@ -1,5 +1,4 @@
 use anyhow::Result;
-use eframe::egui;
 use std::path::PathBuf;
 
 use crate::{
@@ -16,11 +15,15 @@ use crate::{
 
 macro_rules! error {
   ($self:ident, $l:expr) => {
-    $self.toast.error($l);
+    $self.notice = Some($l);
   };
   ($self:ident, $l:expr, $e:expr) => {
-    $self.toast.error($l);
-    std::fs::write(PATH_ERROR_FILE, format!("{:?}\n{}\n{}", chrono::Local::now(), $l, $e)).unwrap();
+    let message = $l;
+    let _ = std::fs::write(
+      PATH_ERROR_FILE,
+      format!("{:?}\n{}\n{}", chrono::Local::now(), message, $e),
+    );
+    $self.notice = Some(message);
   };
 }
 
@@ -34,11 +37,6 @@ pub enum Message {
 }
 
 impl App {
-  /// Returns whether no localization files or modified font are present.
-  pub fn clean_installation(&self) -> bool {
-    !self.any_localization_files_present()
-  }
-
   /// Returns whether localization files or a modified font are present.
   pub fn any_localization_files_present(&self) -> bool {
     self.bin.lib_path.is_file()
@@ -53,51 +51,18 @@ impl App {
     std::fs::read(self.bin.dir.join(PATH_FONT)).is_ok_and(|font| crc32fast::hash(&font) != ORIGINAL_FONT_CHECKSUM)
   }
 
-  /// Shows a native file picker filtered to Dwarf Fortress executables.
-  ///
-  /// Starts in `dir`, or the current working directory when `dir` is `None`.
-  /// Returns the selected executable path, or `None` if the user cancels the dialog.
-  pub fn file_dialog(&self, dir: Option<PathBuf>) -> Option<PathBuf> {
-    let start_dir = dir.unwrap_or_else(|| std::env::current_dir().unwrap_or_default());
-
-    let dialog = rfd::FileDialog::new()
-      .set_title(&t!("Open Dwarf Fortress executable"))
-      .set_directory(start_dir);
-
-    if cfg!(windows) {
-      dialog.add_filter("Executable", &["exe"]).pick_file()
-    } else {
-      dialog.pick_file()
-    }
-  }
-
-  /// Handles the file-selection flow for the native Dwarf Fortress picker.
-  ///
-  /// When a valid executable is chosen, the app updates the binary state and related
-  /// metadata. If the user cancels the dialog and no valid binary is available, the
-  /// window is closed to avoid leaving the installer in an unusable state.
-  pub fn opened_file_dialog(&mut self, ctx: &egui::Context) {
-    if !self.file_picker_requested {
+  pub fn select_binary(&mut self, file: PathBuf) {
+    let bin = DfBinary::new(file);
+    if !bin.valid {
+      error!(self, t!("Selected file is not a valid Dwarf Fortress executable."));
       return;
     }
-
-    self.file_picker_requested = false;
-
-    if let Some(file) = self.file_dialog(Some(self.bin.dir.clone())) {
-      let bin = DfBinary::new(file);
-      if !bin.valid {
-        error!(self, t!("Selected file is not a valid Dwarf Fortress executable."));
-        return;
-      }
-      self.bin = bin;
-      self.hook_checksum = self.local_hook_checksum().unwrap_or(0);
-      self.dict_checksum = self.local_dict_checksum().unwrap_or(0);
-      self.hook_metadata.pick_df_checksum(self.bin.checksum);
-      self.delete_hook_show = self.delete_old_data_check();
-    } else if !self.bin.valid {
-      self.closing = true;
-      ctx.send_viewport_cmd(egui::ViewportCommand::Close);
-    }
+    self.bin = bin;
+    self.notice = None;
+    self.hook_checksum = self.local_hook_checksum().unwrap_or(0);
+    self.dict_checksum = self.local_dict_checksum().unwrap_or(0);
+    self.hook_metadata.pick_df_checksum(self.bin.checksum);
+    self.delete_old_data_show = self.delete_old_data_check();
   }
 
   pub fn on_close(&mut self) {
@@ -119,14 +84,17 @@ impl App {
     }
   }
 
-  pub fn update_state(&mut self) {
-    for msg in self.pool.poll() {
+  pub fn update_state(&mut self) -> bool {
+    let messages: Vec<_> = self.pool.poll().collect();
+    let changed = !messages.is_empty();
+    for msg in messages {
       match msg {
         Message::HookMetadataLoaded(result) => {
           self.hook_metadata_loading = false;
           match result {
             Ok(metadata) => {
               self.hook_metadata = metadata;
+              self.hook_metadata.pick_df_checksum(self.bin.checksum);
               if self.hook_metadata.manifest.checksum == 0 && self.bin.valid {
                 error!(self, t!("This DF version is not supported"));
               }
@@ -141,6 +109,9 @@ impl App {
           match result {
             Ok(metadata) => {
               self.dict_metadata = metadata;
+              self
+                .dict_metadata
+                .pick_language_by_name(self.selected_language.clone());
               if self.selected_language == "None"
                 && let Some(language) = self.dict_metadata.pick_language_by_code(Some(
                   sys_locale::get_locale()
@@ -161,7 +132,7 @@ impl App {
         Message::HookUpdated(result) => {
           match result {
             Ok(_) => {
-              self.toast.success(t!("Hook updated"));
+              self.notice = Some(t!("Hook updated"));
               self.hook_checksum = self.local_hook_checksum().unwrap_or(0)
             }
             Err(err) => {
@@ -173,7 +144,7 @@ impl App {
         Message::DictUpdated(result) => {
           match result {
             Ok(_) => {
-              self.toast.success(t!("Dictionary updated"));
+              self.notice = Some(t!("Dictionary updated"));
               self.dict_checksum = self.local_dict_checksum().unwrap_or(0)
             }
             Err(err) => {
@@ -236,9 +207,11 @@ impl App {
         }
         Message::DfRunning(result) => {
           self.df_running = result;
+          self.process_checked = true;
         }
       }
     }
+    changed
   }
 
   pub fn on_start(&mut self) {
@@ -260,21 +233,6 @@ impl App {
     );
   }
 
-  /// Shows a warning identified by `name` and requests window closure when OK is clicked.
-  pub fn guard(&mut self, ctx: &egui::Context, name: &str, text: &str) {
-    egui::Modal::new(egui::Id::unique(name)).show(ctx, |ui| {
-      ui.heading(t!("Warning"));
-      ui.add_space(8.);
-      ui.label(text);
-      ui.add_space(8.);
-      ui.vertical_centered(|ui| {
-        if ui.button(t!("Ok")).clicked() {
-          ctx.send_viewport_cmd(egui::ViewportCommand::Close);
-        }
-      });
-    });
-  }
-
   pub fn delete_old_data_check(&self) -> bool {
     if !self.bin.valid {
       return false;
@@ -282,76 +240,29 @@ impl App {
     self.bin.dir.join("dfint_launcher.exe").exists() || self.bin.dir.join("dfint_data").exists()
   }
 
-  pub fn delete_old_hook_dialog(&mut self, ctx: &egui::Context) {
-    self.dialog(
-      ctx,
-      "delete_old_data",
-      t!("Old version of translation files has been detected. It's better to delete them to avoid conflicts. Delete?"),
-      |app| {
-        app.delete_old_data_show = false;
-      },
-      |app| {
-        app.delete_old_data_show = false;
-        app.remove_old_data();
-        app.toast.success(t!("Old files successfully deleted"));
-      },
-    );
+  pub fn confirm_old_data_removal(&mut self) {
+    self.remove_old_data();
+    self.notice = Some(t!("Old files successfully deleted"));
   }
 
-  pub fn delete_hook_dialog(&mut self, ctx: &egui::Context) {
-    self.dialog(
-      ctx,
-      "delete_data",
-      t!("Delete all localization files?"),
-      |app| {
-        app.delete_hook_show = false;
-        app.selected_language = "English".to_string();
-      },
-      |app| {
-        app.delete_hook_show = false;
-        app.remove_hook_data();
-        app.hook_checksum = app.local_hook_checksum().unwrap_or(0);
-        app.dict_checksum = app.local_dict_checksum().unwrap_or(0);
-        app
-          .toast
-          .success(t!("Localization files successfully deleted"));
-      },
-    );
-  }
-
-  /// Shows a confirmation modal identified by `tag` with the supplied warning text.
-  ///
-  /// Invokes `no` or `yes` when the corresponding button is clicked. Callbacks must
-  /// update application state to stop showing the dialog on subsequent frames.
-  fn dialog(
-    &mut self,
-    ctx: &egui::Context,
-    tag: impl std::fmt::Display,
-    text: String,
-    no: impl FnOnce(&mut App),
-    yes: impl FnOnce(&mut App),
-  ) {
-    egui::Modal::new(egui::Id::unique(tag.to_string())).show(ctx, |ui| {
-      ui.heading(t!("Warning"));
-      ui.add_space(8.);
-      ui.label(text);
-      ui.add_space(8.);
-      ui.horizontal(|ui| {
-        if ui.button(t!("No")).clicked() {
-          no(self);
-        }
-        if ui.button(t!("Yes")).clicked() {
-          yes(self);
-        }
-      });
-    });
+  pub fn confirm_localization_removal(&mut self) {
+    self.remove_hook_data();
+    self.hook_checksum = self.local_hook_checksum().unwrap_or(0);
+    self.dict_checksum = self.local_dict_checksum().unwrap_or(0);
+    self.notice = Some(t!("Localization files successfully deleted"));
   }
 
   pub fn update_data(&mut self) {
-    std::fs::create_dir_all(self.bin.dir.join(PATH_DATA)).expect("Unable to create directory");
+    if !self.ready() || !self.bin.valid || self.loading > 0 {
+      return;
+    }
+    if let Err(err) = std::fs::create_dir_all(self.bin.dir.join(PATH_DATA)) {
+      error!(self, t!("Unable to create directory"), err.to_string());
+      return;
+    }
 
-    let hook_manifest = self.hook_metadata.manifest.clone();
-    if hook_manifest.df == self.bin.checksum && hook_manifest.checksum != self.hook_checksum {
+    if self.hook_update_available() {
+      let hook_manifest = self.hook_metadata.manifest.clone();
       self.loading += 1;
       let downloads = vec![
         (hook_manifest.lib, self.bin.lib_path.clone()),
@@ -364,8 +275,8 @@ impl App {
         .execute(move || batch_download_to_file(downloads), Message::HookUpdated);
     }
 
-    let dict_manifest = self.dict_metadata.manifest.clone();
-    if dict_manifest.checksum != self.dict_checksum && self.selected_language != "None" {
+    if self.dictionary_update_available() {
+      let dict_manifest = self.dict_metadata.manifest.clone();
       self.loading += 1;
       let downloads = vec![
         (dict_manifest.csv, self.bin.dir.join(PATH_DICT)),

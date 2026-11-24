@@ -6,6 +6,7 @@ on:
     paths:
       - "Cargo.toml"
       - "Cargo.lock"
+      - "build.rs"
       - "rust-toolchain.toml"
       - "src/**"
       - "assets/**"
@@ -17,6 +18,7 @@ on:
     paths:
       - "Cargo.toml"
       - "Cargo.lock"
+      - "build.rs"
       - "rust-toolchain.toml"
       - "src/**"
       - "assets/**"
@@ -42,6 +44,10 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@v2
 
       - uses: Swatinem/rust-cache@v2
+
+      - name: Install GTK4 development files
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libgtk-4-dev
 
       - name: Check formatting
         shell: bash

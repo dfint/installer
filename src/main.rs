@@ -3,10 +3,6 @@
 #[macro_use]
 extern crate serde_derive;
 
-use anyhow::Result;
-use constants::APP_ICON;
-use eframe::egui;
-
 mod app;
 mod cache;
 mod constants;
@@ -20,23 +16,14 @@ mod settings;
 mod thread_pool;
 mod utils;
 
-fn main() -> Result<(), eframe::Error> {
+#[cfg(target_os = "linux")]
+#[path = "gtk_ui.rs"]
+mod ui;
+#[cfg(windows)]
+#[path = "windows_ui.rs"]
+mod ui;
+
+fn main() -> anyhow::Result<()> {
   env_logger::init();
-  let options = eframe::NativeOptions {
-    viewport: egui::ViewportBuilder::default()
-      .with_inner_size([720., 450.])
-      .with_resizable(false)
-      .with_icon(eframe::icon_data::from_png_bytes(APP_ICON).unwrap()),
-    ..Default::default()
-  };
-  eframe::run_native(
-    "DF localization installer",
-    options,
-    Box::new(|cc| {
-      let app = Box::<app::App>::default();
-      cc.egui_ctx.set_theme(app.settings.theme_preference());
-      egui_extras::install_image_loaders(&cc.egui_ctx);
-      Ok(app)
-    }),
-  )
+  ui::run()
 }

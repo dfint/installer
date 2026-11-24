@@ -1,5 +1,4 @@
 use anyhow::Result;
-use egui::ThemePreference;
 use std::path::PathBuf;
 
 use crate::constants::{PATH_CACHE_FILE, PATH_SETTINGS_FILE};
@@ -37,13 +36,5 @@ impl Settings {
   pub fn save(&self) -> Result<()> {
     std::fs::write(PATH_SETTINGS_FILE, serde_json::to_string_pretty(self)?)?;
     Ok(())
-  }
-
-  pub fn theme_preference(&self) -> ThemePreference {
-    match self.theme.as_str() {
-      "light" => ThemePreference::Light,
-      "dark" => ThemePreference::Dark,
-      _ => ThemePreference::System,
-    }
   }
 }
