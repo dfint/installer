@@ -39,9 +39,9 @@ jobs:
       - name: Package files
         run: |
           cd release/
-          zip dfint-installer-win-${{ env.VERSION }}.zip dfint-installer.exe
+          zip -j dfint-installer-win-${{ env.VERSION }}.zip dfint-installer.exe ../assets/os-linux-license.txt ../assets/os-windows-license.txt
           chmod +x dfint-installer
-          tar -czf dfint-installer-lin-${{ env.VERSION }}.tar.gz dfint-installer
+          tar -czf dfint-installer-lin-${{ env.VERSION }}.tar.gz dfint-installer -C ../assets os-linux-license.txt os-windows-license.txt
 
       - name: Attestation
         uses: actions/attest-build-provenance@v4

@@ -132,7 +132,7 @@ impl App {
         Message::HookUpdated(result) => {
           match result {
             Ok(_) => {
-              self.notice = Some(t!("Hook updated"));
+              self.notice.get_or_insert_with(|| t!("Hook updated"));
               self.hook_checksum = self.local_hook_checksum().unwrap_or(0)
             }
             Err(err) => {
@@ -144,7 +144,7 @@ impl App {
         Message::DictUpdated(result) => {
           match result {
             Ok(_) => {
-              self.notice = Some(t!("Dictionary updated"));
+              self.notice.get_or_insert_with(|| t!("Dictionary updated"));
               self.dict_checksum = self.local_dict_checksum().unwrap_or(0)
             }
             Err(err) => {
@@ -256,6 +256,7 @@ impl App {
     if !self.ready() || !self.bin.valid || self.loading > 0 {
       return;
     }
+    self.notice = None;
     if let Err(err) = std::fs::create_dir_all(self.bin.dir.join(PATH_DATA)) {
       error!(self, t!("Unable to create directory"), err.to_string());
       return;
