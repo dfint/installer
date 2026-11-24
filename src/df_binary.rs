@@ -1,7 +1,6 @@
 use anyhow::Result;
 use exe::{PE, VecPE};
 
-use regex::bytes::{Captures, Regex};
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 
@@ -117,42 +116,65 @@ impl DfBinary {
     }
   }
 
-  fn version_comparing_key(caps: &Captures) -> (u32, u32, u32) {
-    let parse_group = |idx: usize| -> u32 {
-      let m = caps.get(idx).unwrap().as_bytes();
-      std::str::from_utf8(m).unwrap().parse().unwrap()
+  fn version_comparing_key(version: &str) -> Option<(u32, u32, u32)> {
+    let (major, rest) = version.split_once('.')?;
+    let (minor, beta) = match rest.split_once('-') {
+      Some((minor, suffix)) => {
+        let digit = suffix.find(|c: char| c.is_ascii_digit())?;
+        if digit == 0 {
+          return None;
+        }
+        (minor, suffix[digit..].parse().ok()?)
+      }
+      None => (rest, MAX_BETA),
     };
-
-    let major = parse_group(2);
-    let minor = parse_group(3);
-
-    let beta = caps
-      .get(6)
-      .map(|m| std::str::from_utf8(m.as_bytes()).unwrap().parse().unwrap())
-      .unwrap_or(MAX_BETA);
-
-    (major, minor, beta)
+    if !major.bytes().all(|b| b.is_ascii_digit()) || !minor.bytes().all(|b| b.is_ascii_digit()) {
+      return None;
+    }
+    Some((major.parse().ok()?, minor.parse().ok()?, beta))
   }
 
   pub fn detect_df_version(data: &[u8]) -> Option<String> {
-    let pattern = Regex::new(r"\x00((\d+)\.(\d+)(-([^\d]+)(\d*))?)\x00").unwrap();
-    let best_match = pattern
-      .captures_iter(data)
-      .max_by_key(|caps| DfBinary::version_comparing_key(caps))?;
-
-    let version_bytes = best_match.get(1)?.as_bytes();
-    String::from_utf8(version_bytes.to_vec()).ok()
+    let mut boundaries = memchr::memchr_iter(0, data);
+    let mut start = boundaries.next()?;
+    let mut best = None;
+    for end in boundaries {
+      let bytes = &data[start + 1..end];
+      start = end;
+      if !bytes.first().is_some_and(u8::is_ascii_digit) {
+        continue;
+      }
+      let Ok(version) = std::str::from_utf8(bytes) else {
+        continue;
+      };
+      if let Some(key) = Self::version_comparing_key(version)
+        && best.is_none_or(|(previous, _)| key >= previous)
+      {
+        best = Some((key, version));
+      }
+    }
+    best.map(|(_, version)| version.to_owned())
   }
 
   pub fn detect_steam_api(data: &[u8]) -> bool {
-    let pattern = Regex::new(r"SteamAPI_Init").unwrap();
-    pattern.is_match(data)
+    memchr::memmem::find(data, b"SteamAPI_Init").is_some()
   }
 }
 
 #[cfg(test)]
 mod tests {
   use super::*;
+
+  #[test]
+  fn detects_latest_version_in_binary_data() {
+    let data =
+      b"99.99\x00\xff\x000.55.1\x0055.02-beta2\x0055.02-beta10\x0055.02\x0055.03-beta99x\x004294967296.01\x0066.99";
+    assert_eq!(DfBinary::detect_df_version(data).as_deref(), Some("55.02"));
+    assert_eq!(
+      DfBinary::detect_df_version(b"\x0055.02-beta2\x0055.02-beta10\x00").as_deref(),
+      Some("55.02-beta10")
+    );
+  }
 
   #[test]
   fn bin() {

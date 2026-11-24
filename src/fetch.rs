@@ -70,16 +70,15 @@ pub fn fetch_bytes(path: &str) -> Result<Vec<u8>> {
   }
 }
 
-pub async fn download_to_file(url: &str, file: &PathBuf) -> Result<()> {
+fn download_to_file(url: &str, file: &PathBuf) -> Result<()> {
   let data: Vec<u8> = fetch::fetch_bytes(url)?;
   std::fs::write(file, &data)?;
   Ok(())
 }
 
-pub async fn batch_download_to_file(items: Vec<(String, PathBuf)>) -> Result<()> {
-  let result = futures::future::join_all(items.iter().map(|(url, file)| download_to_file(url, file))).await;
-  for item in result {
-    item?;
+pub fn batch_download_to_file(items: Vec<(String, PathBuf)>) -> Result<()> {
+  for (url, file) in items {
+    download_to_file(&url, &file)?;
   }
   Ok(())
 }

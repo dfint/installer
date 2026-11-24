@@ -31,7 +31,7 @@ pub fn scan_df() -> Option<PathBuf> {
   pathes.into_iter().find(|path| path.exists())
 }
 
-pub async fn is_df_running() -> bool {
+pub fn is_df_running() -> bool {
   let Ok(system) = System::new_all() else {
     return false;
   };

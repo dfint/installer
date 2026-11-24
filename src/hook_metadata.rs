@@ -19,7 +19,7 @@ pub struct HookMetadata {
 }
 
 impl HookMetadata {
-  pub async fn from_url(url: &str, pick_df_checksum: Option<u32>) -> Result<Self> {
+  pub fn from_url(url: &str, pick_df_checksum: Option<u32>) -> Result<Self> {
     let manifests: Vec<Manifest> = fetch::fetch_json(url)?;
 
     let picked = match pick_df_checksum {
