@@ -205,15 +205,17 @@ impl App {
 
           self.hook_checksum = self.local_hook_checksum().unwrap_or(0);
           self.hook_metadata_loading = true;
+          let checksum = self.bin.checksum;
           self.pool.execute(
-            HookMetadata::from_url(URL_HOOK_MANIFEST, Some(self.bin.checksum)),
+            move || HookMetadata::from_url(URL_HOOK_MANIFEST, Some(checksum)),
             Message::HookMetadataLoaded,
           );
 
           self.dict_checksum = self.local_dict_checksum().unwrap_or(0);
           self.dict_metadata_loading = true;
+          let selected_language = self.selected_language.clone();
           self.pool.execute(
-            DictMetadata::from_url(URL_DICT_MANIFEST, Some(self.selected_language.clone())),
+            move || DictMetadata::from_url(URL_DICT_MANIFEST, Some(selected_language)),
             Message::DictMetadataLoaded,
           );
 
@@ -241,11 +243,11 @@ impl App {
 
   pub fn on_start(&mut self) {
     self.state = State::Loading;
-    self.pool.execute(is_df_running(), Message::DfRunning);
+    self.pool.execute(is_df_running, Message::DfRunning);
     let saved_bin = self.settings.bin.clone();
     let selected_language = self.settings.selected_language.clone();
     self.pool.execute(
-      async move {
+      move || {
         let bin = if saved_bin.exists() {
           saved_bin
         } else {
@@ -351,28 +353,28 @@ impl App {
     let hook_manifest = self.hook_metadata.manifest.clone();
     if hook_manifest.df == self.bin.checksum && hook_manifest.checksum != self.hook_checksum {
       self.loading += 1;
-      self.pool.execute(
-        batch_download_to_file(vec![
-          (hook_manifest.lib, self.bin.lib_path.clone()),
-          (hook_manifest.config, self.bin.dir.join(PATH_CONFIG)),
-          (hook_manifest.offsets, self.bin.dir.join(PATH_OFFSETS)),
-          (hook_manifest.dfhooks, self.bin.dfhooks_path.clone()),
-        ]),
-        Message::HookUpdated,
-      );
+      let downloads = vec![
+        (hook_manifest.lib, self.bin.lib_path.clone()),
+        (hook_manifest.config, self.bin.dir.join(PATH_CONFIG)),
+        (hook_manifest.offsets, self.bin.dir.join(PATH_OFFSETS)),
+        (hook_manifest.dfhooks, self.bin.dfhooks_path.clone()),
+      ];
+      self
+        .pool
+        .execute(move || batch_download_to_file(downloads), Message::HookUpdated);
     }
 
     let dict_manifest = self.dict_metadata.manifest.clone();
     if dict_manifest.checksum != self.dict_checksum && self.selected_language != "None" {
       self.loading += 1;
-      self.pool.execute(
-        batch_download_to_file(vec![
-          (dict_manifest.csv, self.bin.dir.join(PATH_DICT)),
-          (dict_manifest.font, self.bin.dir.join(PATH_FONT)),
-          (dict_manifest.encoding, self.bin.dir.join(PATH_ENCODING)),
-        ]),
-        Message::DictUpdated,
-      );
+      let downloads = vec![
+        (dict_manifest.csv, self.bin.dir.join(PATH_DICT)),
+        (dict_manifest.font, self.bin.dir.join(PATH_FONT)),
+        (dict_manifest.encoding, self.bin.dir.join(PATH_ENCODING)),
+      ];
+      self
+        .pool
+        .execute(move || batch_download_to_file(downloads), Message::DictUpdated);
     }
   }
 

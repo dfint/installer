@@ -1,8 +1,6 @@
-use async_std::task;
-use futures::FutureExt;
 use std::{
-  future::Future,
   sync::mpsc::{Receiver, Sender, TryIter, channel},
+  thread,
 };
 
 pub struct ThreadPool<T> {
@@ -16,15 +14,10 @@ impl<T: Send + 'static> ThreadPool<T> {
     ThreadPool { tx, rx }
   }
 
-  pub fn execute<O>(
-    &self,
-    task: impl Future<Output = O> + Send + 'static,
-    message: impl FnOnce(O) -> T + Send + 'static,
-  ) {
+  pub fn execute<O>(&self, task: impl FnOnce() -> O + Send + 'static, message: impl FnOnce(O) -> T + Send + 'static) {
     let tx = self.tx.clone();
-    task::spawn(async move {
-      let result = task.map(message).await;
-      tx.send(result).unwrap();
+    thread::spawn(move || {
+      let _ = tx.send(message(task()));
     });
   }
 

@@ -32,7 +32,7 @@ pub struct DictMetadata {
 }
 
 impl DictMetadata {
-  pub async fn from_url(url: &str, pick_language: Option<String>) -> Result<Self> {
+  pub fn from_url(url: &str, pick_language: Option<String>) -> Result<Self> {
     let manifests: Vec<Manifest> = fetch::fetch_json(url)?;
 
     let picked = match pick_language {
