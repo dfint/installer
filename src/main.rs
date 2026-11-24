@@ -14,6 +14,7 @@ mod localization;
 mod logic;
 mod settings;
 mod thread_pool;
+mod ui_layout;
 mod utils;
 
 #[cfg(target_os = "linux")]

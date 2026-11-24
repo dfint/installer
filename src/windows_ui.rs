@@ -27,9 +27,13 @@ use windows_sys::Win32::{
 
 use crate::{
   app::{App, ComponentStatus, Status, locales, old_data_warning, running_warning},
-  constants::{URL_BUGS, URL_TRANSIFEX, VERSION},
+  constants::VERSION,
   df_binary::OS,
   localization::{LOCALE, t},
+  ui_layout::{
+    CONTENT_ROWS, ContentColumn, ContentRow, FOOTER_LEADING_ITEMS, FOOTER_TRAILING_ITEMS, FooterItem, FooterLinkTarget,
+    INSTALL_HEIGHT, INSTALL_WIDTH, WINDOW_HEIGHT, WINDOW_WIDTH,
+  },
 };
 
 const SS_ICON: u32 = 0x0003;
@@ -85,8 +89,8 @@ pub fn run() -> anyhow::Result<()> {
     let mut bounds = RECT {
       left: 0,
       top: 0,
-      right: scale(720, dpi),
-      bottom: scale(450, dpi),
+      right: scale(WINDOW_WIDTH, dpi),
+      bottom: scale(WINDOW_HEIGHT, dpi),
     };
     AdjustWindowRectExForDpi(&mut bounds, style, 0, 0, dpi);
     let window = CreateWindowExW(
@@ -326,10 +330,16 @@ impl Window {
     };
     let status_row = |y, height| {
       Ok::<_, anyhow::Error>(StatusRow {
-        local: label([165, y, 145, 24])?,
-        available: label([320, y, 145, 24])?,
-        icon: create(w!("STATIC"), "", SS_ICON, 0, [475, y, 16, 16])?,
-        status: label([497, y, 213, height])?,
+        local: label([column_x(ContentColumn::PrimaryValue), y, 145, 24])?,
+        available: label([column_x(ContentColumn::AvailableVersion), y, 145, 24])?,
+        icon: create(
+          w!("STATIC"),
+          "",
+          SS_ICON,
+          0,
+          [column_x(ContentColumn::UpdateStatus), y, 16, 16],
+        )?,
+        status: label([column_x(ContentColumn::UpdateStatus) + 22, y, 213, height])?,
       })
     };
 
@@ -341,37 +351,125 @@ impl Window {
     };
 
     let result = (|| {
-      heading("Dwarf Fortress", [9, 12, 500, 22])?;
-      separator(37)?;
-      let path_title = label([9, 48, 150, 22])?;
+      heading(
+        "Dwarf Fortress",
+        [
+          column_x(ContentColumn::FieldLabel),
+          row_y(ContentRow::GameDetailsHeading),
+          500,
+          22,
+        ],
+      )?;
+      separator(row_y(ContentRow::GameDetailsHeading) + 25)?;
+      let path_title = label([
+        column_x(ContentColumn::FieldLabel),
+        row_y(ContentRow::GameExecutablePath) + 4,
+        150,
+        22,
+      ])?;
       let path = create(
         w!("EDIT"),
         "",
         WS_BORDER | WS_TABSTOP | (ES_READONLY | ES_AUTOHSCROLL) as u32,
         0,
-        [165, 45, 505, 23],
+        [
+          column_x(ContentColumn::PrimaryValue),
+          row_y(ContentRow::GameExecutablePath) + 1,
+          505,
+          23,
+        ],
       )?;
-      let browse = button(BROWSE, [676, 44, 35, 25])?;
+      let browse = button(
+        BROWSE,
+        [
+          column_x(ContentColumn::BrowseExecutableButton),
+          row_y(ContentRow::GameExecutablePath),
+          35,
+          25,
+        ],
+      )?;
       set_text(browse, "…");
-      let version_title = label([9, 77, 150, 22])?;
-      let version = label([165, 77, 100, 22])?;
-      let platform_icon = create(w!("STATIC"), "", SS_ICON, 0, [265, 75, 16, 16])?;
-      let platform = label([286, 77, 425, 22])?;
-      let checksum_title = label([9, 101, 150, 22])?;
-      let checksum = label([165, 101, 546, 22])?;
+      let version_title = label([
+        column_x(ContentColumn::FieldLabel),
+        row_y(ContentRow::GameVersion),
+        150,
+        22,
+      ])?;
+      let version = label([
+        column_x(ContentColumn::PrimaryValue),
+        row_y(ContentRow::GameVersion),
+        100,
+        22,
+      ])?;
+      let platform_icon = create(w!("STATIC"), "", SS_ICON, 0, [0, 0, 16, 16])?;
+      let platform = label([0, 0, 425, 22])?;
+      let checksum_title = label([
+        column_x(ContentColumn::FieldLabel),
+        row_y(ContentRow::GameChecksum),
+        150,
+        22,
+      ])?;
+      let checksum = label([
+        column_x(ContentColumn::PrimaryValue),
+        row_y(ContentRow::GameChecksum),
+        546,
+        22,
+      ])?;
 
-      let hook_title = heading("", [9, 140, 400, 23])?;
-      separator(168)?;
-      let hook_version = label([9, 178, 150, 24])?;
-      let hook = status_row(178, 34)?;
+      let hook_title = heading(
+        "",
+        [
+          column_x(ContentColumn::FieldLabel),
+          row_y(ContentRow::HookHeading),
+          400,
+          23,
+        ],
+      )?;
+      separator(row_y(ContentRow::HookHeading) + 28)?;
+      let hook_version = label([
+        column_x(ContentColumn::FieldLabel),
+        row_y(ContentRow::HookVersionStatus),
+        150,
+        24,
+      ])?;
+      let hook = status_row(row_y(ContentRow::HookVersionStatus), 34)?;
 
-      let dict_title = heading("", [9, 218, 500, 22])?;
-      separator(245)?;
-      let languages = combo(LANGUAGE, [9, 253, 145, 190])?;
-      let dict = status_row(257, 34)?;
+      let dict_title = heading(
+        "",
+        [
+          column_x(ContentColumn::FieldLabel),
+          row_y(ContentRow::DictionaryHeading),
+          500,
+          22,
+        ],
+      )?;
+      separator(row_y(ContentRow::DictionaryHeading) + 27)?;
+      let languages = combo(
+        LANGUAGE,
+        [
+          column_x(ContentColumn::FieldLabel),
+          row_y(ContentRow::DictionaryLanguageAndStatus),
+          145,
+          190,
+        ],
+      )?;
+      let dict = status_row(row_y(ContentRow::DictionaryLanguageAndStatus) + 4, 34)?;
 
-      let install = button(INSTALL, [295, 306, 130, 40])?;
-      let notice = label([9, 362, 702, 39])?;
+      let install = button(
+        INSTALL,
+        [
+          (WINDOW_WIDTH - INSTALL_WIDTH) / 2,
+          row_y(ContentRow::InstallOrUpdateAction),
+          INSTALL_WIDTH,
+          INSTALL_HEIGHT,
+        ],
+      )?;
+      let notice = label([
+        column_x(ContentColumn::FieldLabel),
+        row_y(ContentRow::OperationNotice),
+        702,
+        39,
+      ])?;
       let bar = create(STATUSCLASSNAMEW, "", WS_CLIPCHILDREN, 0, [0, 0, 0, 0])?;
       unsafe {
         let style = GetWindowLongPtrW(bar, GWL_EXSTYLE);
@@ -479,7 +577,7 @@ impl Window {
     } else {
       set_text(self.notice, app.notice.as_deref().unwrap_or_default());
     }
-    self.refresh_footer();
+    self.refresh_footer(view.has_localization);
     unsafe {
       EnableWindow(self.browse, (view.ready && !view.busy).into());
       EnableWindow(
@@ -488,31 +586,28 @@ impl Window {
       );
       ShowWindow(self.install, if view.can_update { SW_SHOWNA } else { SW_HIDE });
       ShowWindow(self.remove, if view.has_localization { SW_SHOWNA } else { SW_HIDE });
-      let locale_x = if view.has_localization { 604 } else { 640 };
-      SetWindowPos(
-        self.locale,
-        null_mut(),
-        scale(locale_x, self.dpi),
-        scale(9, self.dpi),
-        0,
-        0,
-        SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE,
-      );
       EnableWindow(self.remove, (view.ready && !view.busy).into());
     }
   }
 
   fn place_version(&self, version: &str, show_icon: bool) {
     let width = text_width(self.version, self.font, version) + scale(4, self.dpi);
-    let x = scale(165, self.dpi);
+    let x = scale(column_x(ContentColumn::PrimaryValue), self.dpi);
     let icon_size = scale(16, self.dpi);
     let platform_x = x + width + if show_icon { scale(21, self.dpi) } else { 0 };
     unsafe {
-      MoveWindow(self.version, x, scale(77, self.dpi), width, scale(22, self.dpi), 1);
+      MoveWindow(
+        self.version,
+        x,
+        scale(row_y(ContentRow::GameVersion), self.dpi),
+        width,
+        scale(22, self.dpi),
+        1,
+      );
       MoveWindow(
         self.platform_icon,
         x + width,
-        scale(75, self.dpi),
+        scale(row_y(ContentRow::GameVersion) - 2, self.dpi),
         icon_size,
         icon_size,
         1,
@@ -521,7 +616,7 @@ impl Window {
       MoveWindow(
         self.platform,
         platform_x,
-        scale(77, self.dpi),
+        scale(row_y(ContentRow::GameVersion), self.dpi),
         scale(711, self.dpi) - platform_x,
         scale(22, self.dpi),
         1,
@@ -529,24 +624,56 @@ impl Window {
     }
   }
 
-  fn refresh_footer(&self) {
-    let start = scale(9, self.dpi);
-    let next = self
-      .bugs
-      .place(&t!("Report bug"), URL_BUGS, start, self.dpi);
-    let end = self
-      .translations
-      .place(&t!("Help with translation"), URL_TRANSIFEX, next, self.dpi);
-    unsafe {
-      MoveWindow(
-        self.build,
-        end,
-        scale(15, self.dpi),
-        scale(75, self.dpi),
-        scale(22, self.dpi),
-        1,
-      );
+  fn refresh_footer(&self, show_remove: bool) {
+    let mut left = scale(9, self.dpi);
+    for item in FOOTER_LEADING_ITEMS {
+      let width = self.footer_width(item, show_remove);
+      if width > 0 {
+        self.place_footer_item(item, left, width);
+        left += width + scale(10, self.dpi);
+      }
     }
+
+    let mut right = scale(WINDOW_WIDTH - 9, self.dpi);
+    for item in FOOTER_TRAILING_ITEMS.into_iter().rev() {
+      let width = self.footer_width(item, show_remove);
+      if width > 0 {
+        right -= width;
+        self.place_footer_item(item, right, width);
+        right -= scale(5, self.dpi);
+      }
+    }
+  }
+
+  fn footer_width(&self, item: FooterItem, show_remove: bool) -> i32 {
+    match item {
+      FooterItem::ExternalLink(FooterLinkTarget::ReportBug) => self.bugs.measure(FooterLinkTarget::ReportBug, self.dpi),
+      FooterItem::ExternalLink(FooterLinkTarget::HelpWithTranslation) => self
+        .translations
+        .measure(FooterLinkTarget::HelpWithTranslation, self.dpi),
+      FooterItem::InstallerVersion => scale(75, self.dpi),
+      FooterItem::InterfaceLanguageSelector => scale(71, self.dpi),
+      FooterItem::RemoveLocalizationButton => {
+        if show_remove {
+          scale(31, self.dpi)
+        } else {
+          0
+        }
+      }
+    }
+  }
+
+  fn place_footer_item(&self, item: FooterItem, x: i32, width: i32) {
+    let (control, y, height) = match item {
+      FooterItem::ExternalLink(FooterLinkTarget::ReportBug) => return self.bugs.place(x, width, self.dpi),
+      FooterItem::ExternalLink(FooterLinkTarget::HelpWithTranslation) => {
+        return self.translations.place(x, width, self.dpi);
+      }
+      FooterItem::InstallerVersion => (self.build, 15, 22),
+      FooterItem::InterfaceLanguageSelector => (self.locale, 9, 200),
+      FooterItem::RemoveLocalizationButton => (self.remove, 8, 25),
+    };
+    unsafe { MoveWindow(control, x, scale(y, self.dpi), width, scale(height, self.dpi), 1) };
   }
 
   fn action(&self, app: &mut App, id: usize, languages: &[String], locale_options: &[String]) {
@@ -568,8 +695,8 @@ impl Window {
           app.confirm_localization_removal();
         }
       }
-      BUG_LINK | BUG_ICON => self.open_url(URL_BUGS),
-      TRANSIFEX_LINK | TRANSIFEX_ICON => self.open_url(URL_TRANSIFEX),
+      BUG_LINK | BUG_ICON => self.open_url(FooterLinkTarget::ReportBug.url()),
+      TRANSIFEX_LINK | TRANSIFEX_ICON => self.open_url(FooterLinkTarget::HelpWithTranslation.url()),
       _ => {}
     }
   }
@@ -639,22 +766,28 @@ struct FooterLink {
 }
 
 impl FooterLink {
-  fn place(&self, title: &str, url: &str, x: i32, dpi: u32) -> i32 {
+  fn measure(&self, link: FooterLinkTarget, dpi: u32) -> i32 {
+    let title = link.title();
+    let url = link.url();
     set_text(self.text, &format!(r#"<a href="{url}">{title}</a>"#));
+    let mut size = SIZE::default();
+    let max_width = scale(260, dpi);
     unsafe {
-      let mut size = SIZE::default();
-      let max_width = scale(260, dpi);
       SendMessageW(
         self.text,
         LM_GETIDEALSIZE,
         max_width as usize,
         (&mut size as *mut SIZE) as LPARAM,
       );
-      let width = size.cx.clamp(1, max_width);
-      let text_x = x + scale(21, dpi);
+    }
+    size.cx.clamp(1, max_width) + scale(21, dpi)
+  }
+
+  fn place(&self, x: i32, width: i32, dpi: u32) {
+    let inset = scale(21, dpi);
+    unsafe {
       MoveWindow(self.icon, x, scale(13, dpi), scale(16, dpi), scale(16, dpi), 1);
-      MoveWindow(self.text, text_x, scale(15, dpi), width, scale(22, dpi), 1);
-      text_x + width + scale(10, dpi)
+      MoveWindow(self.text, x + inset, scale(15, dpi), width - inset, scale(22, dpi), 1);
     }
   }
 }
@@ -777,6 +910,31 @@ fn text_width(control: HWND, font: HFONT, text: &str) -> i32 {
 
 fn set_text(control: HWND, text: &str) {
   unsafe { SetWindowTextW(control, wide(text).as_ptr()) };
+}
+
+fn row_y(row: ContentRow) -> i32 {
+  // Native row heights include room for the controls and the gap before the next row.
+  12 + CONTENT_ROWS
+    .iter()
+    .take_while(|&&item| item != row)
+    .map(|item| match item {
+      ContentRow::GameDetailsHeading => 32,
+      ContentRow::GameExecutablePath => 33,
+      ContentRow::GameVersion => 24,
+      ContentRow::GameChecksum => 39,
+      ContentRow::HookHeading => 38,
+      ContentRow::HookVersionStatus => 40,
+      ContentRow::DictionaryHeading => 35,
+      ContentRow::DictionaryLanguageAndStatus => 53,
+      ContentRow::InstallOrUpdateAction => 56,
+      ContentRow::OperationNotice => 39,
+    })
+    .sum::<i32>()
+}
+
+fn column_x(column: ContentColumn) -> i32 {
+  const STARTS: [i32; ContentColumn::COUNT as usize] = [9, 165, 320, 475, 676];
+  STARTS[column.index() as usize]
 }
 
 fn scale(value: i32, dpi: u32) -> i32 {

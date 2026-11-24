@@ -8,9 +8,13 @@ use std::{
 
 use crate::{
   app::{App, ComponentStatus, locales, old_data_warning, running_warning},
-  constants::{URL_BUGS, URL_TRANSIFEX, VERSION},
+  constants::VERSION,
   df_binary::OS,
   localization::{LOCALE, t},
+  ui_layout::{
+    CONTENT_ROWS, ContentColumn, ContentRow, FOOTER_LEADING_ITEMS, FOOTER_TRAILING_ITEMS, FooterItem, FooterLinkTarget,
+    INSTALL_HEIGHT, INSTALL_WIDTH, WINDOW_HEIGHT, WINDOW_WIDTH,
+  },
 };
 
 struct Window {
@@ -72,13 +76,13 @@ impl Window {
     let window = gtk::ApplicationWindow::builder()
       .application(application)
       .title("DF localization installer")
-      .default_width(720)
-      .default_height(450)
+      .default_width(WINDOW_WIDTH)
+      .default_height(WINDOW_HEIGHT)
       .build();
     let root = gtk::Box::new(gtk::Orientation::Vertical, 0);
     window.set_child(Some(&root));
 
-    let content = gtk::Box::new(gtk::Orientation::Vertical, 12);
+    let content = gtk::Box::new(gtk::Orientation::Vertical, 0);
     content.set_margin_top(12);
     content.set_margin_bottom(8);
     content.set_margin_start(10);
@@ -90,8 +94,9 @@ impl Window {
       .row_spacing(6)
       .column_spacing(12)
       .build();
+    grid.set_vexpand(true);
     content.append(&grid);
-    add_section(&grid, 0, &heading("Dwarf Fortress"));
+    let game_title = heading("Dwarf Fortress");
     let path_title = label();
     let version_title = label();
     let checksum_title = label();
@@ -111,46 +116,77 @@ impl Window {
     let checksum = label();
     let browse = gtk::Button::from_icon_name("system-search-symbolic");
     browse.set_halign(gtk::Align::End);
-    grid.attach(&path_title, 0, 2, 1, 1);
-    grid.attach(&path, 1, 2, 3, 1);
-    grid.attach(&browse, 4, 2, 1, 1);
-    grid.attach(&version_title, 0, 3, 1, 1);
-    grid.attach(&version_row, 1, 3, 4, 1);
-    grid.attach(&checksum_title, 0, 4, 1, 1);
-    grid.attach(&checksum, 1, 4, 4, 1);
-
     let hook_title = heading("");
-    add_section(&grid, 5, &hook_title);
     let hook_version = label();
-    grid.attach(&hook_version, 0, 7, 1, 1);
-    let hook = StatusRow::attach(&grid, 7);
+    let hook = StatusRow::new();
 
     let dict_title = heading("");
-    add_section(&grid, 8, &dict_title);
     let languages = gtk::ComboBoxText::new();
     languages.set_size_request(140, -1);
     languages.set_halign(gtk::Align::Start);
-    grid.attach(&languages, 0, 10, 1, 1);
-    let dict = StatusRow::attach(&grid, 10);
+    let dict = StatusRow::new();
 
     let actions = gtk::Box::new(gtk::Orientation::Vertical, 0);
     actions.set_halign(gtk::Align::Center);
-    actions.set_margin_top(8);
+    actions.set_margin_top(14);
     let install = gtk::Button::new();
-    install.set_size_request(130, 40);
+    install.set_size_request(INSTALL_WIDTH, INSTALL_HEIGHT);
     install.add_css_class("suggested-action");
     let spinner = gtk::Spinner::new();
-    spinner.set_size_request(24, 40);
+    spinner.set_size_request(24, INSTALL_HEIGHT);
     actions.append(&install);
     actions.append(&spinner);
-    content.append(&actions);
 
     let notice = label();
     notice.set_wrap(true);
     notice.set_halign(gtk::Align::End);
     notice.set_valign(gtk::Align::End);
     notice.set_vexpand(true);
-    content.append(&notice);
+    notice.set_margin_top(6);
+    let mut row = 0;
+    let label_column = ContentColumn::FieldLabel.index();
+    let local = ContentColumn::PrimaryValue.index();
+    let browse_column = ContentColumn::BrowseExecutableButton.index();
+    for item in CONTENT_ROWS {
+      match item {
+        ContentRow::GameDetailsHeading => {
+          add_section(&grid, row, &game_title);
+          row += 1;
+        }
+        ContentRow::HookHeading => {
+          add_section(&grid, row, &hook_title);
+          row += 1;
+        }
+        ContentRow::DictionaryHeading => {
+          add_section(&grid, row, &dict_title);
+          row += 1;
+        }
+        ContentRow::GameExecutablePath => {
+          grid.attach(&path_title, label_column, row, 1, 1);
+          grid.attach(&path, local, row, browse_column - local, 1);
+          grid.attach(&browse, browse_column, row, 1, 1);
+        }
+        ContentRow::GameVersion => {
+          grid.attach(&version_title, label_column, row, 1, 1);
+          grid.attach(&version_row, local, row, ContentColumn::COUNT - local, 1);
+        }
+        ContentRow::GameChecksum => {
+          grid.attach(&checksum_title, label_column, row, 1, 1);
+          grid.attach(&checksum, local, row, ContentColumn::COUNT - local, 1);
+        }
+        ContentRow::HookVersionStatus => {
+          grid.attach(&hook_version, label_column, row, 1, 1);
+          hook.attach(&grid, row);
+        }
+        ContentRow::DictionaryLanguageAndStatus => {
+          grid.attach(&languages, label_column, row, 1, 1);
+          dict.attach(&grid, row);
+        }
+        ContentRow::InstallOrUpdateAction => grid.attach(&actions, 0, row, ContentColumn::COUNT, 1),
+        ContentRow::OperationNotice => grid.attach(&notice, 0, row, ContentColumn::COUNT, 1),
+      }
+      row += 1;
+    }
 
     root.append(&gtk::Separator::new(gtk::Orientation::Horizontal));
     let footer = gtk::Box::new(gtk::Orientation::Horizontal, 4);
@@ -158,22 +194,34 @@ impl Window {
     footer.set_margin_end(8);
     footer.set_margin_top(4);
     footer.set_margin_bottom(4);
-    let (bug_link, bugs) = footer_link(URL_BUGS, include_bytes!("../assets/github.png"));
-    let (translation_link, translations) = footer_link(URL_TRANSIFEX, include_bytes!("../assets/transifex.png"));
+    let (bug_link, bugs) = footer_link(
+      FooterLinkTarget::ReportBug.url(),
+      include_bytes!("../assets/github.png"),
+    );
+    let (translation_link, translations) = footer_link(
+      FooterLinkTarget::HelpWithTranslation.url(),
+      include_bytes!("../assets/transifex.png"),
+    );
     let locale = gtk::ComboBoxText::new();
     for item in locales(&LOCALE.read().current_locale()) {
       locale.append(Some(&item), &item);
     }
     let build = gtk::Label::new(Some(&format!("v{VERSION}")));
     build.add_css_class("dim-label");
-    build.set_hexpand(true);
     build.set_xalign(0.0);
-    footer.append(&bug_link);
-    footer.append(&translation_link);
-    footer.append(&build);
-    footer.append(&locale);
     let remove = gtk::Button::from_icon_name("user-trash-symbolic");
-    footer.append(&remove);
+    let append = |item| match item {
+      FooterItem::ExternalLink(FooterLinkTarget::ReportBug) => footer.append(&bug_link),
+      FooterItem::ExternalLink(FooterLinkTarget::HelpWithTranslation) => footer.append(&translation_link),
+      FooterItem::InstallerVersion => footer.append(&build),
+      FooterItem::InterfaceLanguageSelector => footer.append(&locale),
+      FooterItem::RemoveLocalizationButton => footer.append(&remove),
+    };
+    FOOTER_LEADING_ITEMS.into_iter().for_each(append);
+    let spacer = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+    spacer.set_hexpand(true);
+    footer.append(&spacer);
+    FOOTER_TRAILING_ITEMS.into_iter().for_each(append);
     root.append(&footer);
 
     let ui = Rc::new(Self {
@@ -313,8 +361,10 @@ impl Window {
     self
       .notice
       .set_text(app.notice.as_deref().unwrap_or_default());
-    self.bugs.set_text(&t!("Report bug"));
-    self.translations.set_text(&t!("Help with translation"));
+    self.bugs.set_text(&FooterLinkTarget::ReportBug.title());
+    self
+      .translations
+      .set_text(&FooterLinkTarget::HelpWithTranslation.title());
   }
 
   fn changed(self: &Rc<Self>) {
@@ -446,8 +496,14 @@ fn add_section(grid: &gtk::Grid, row: i32, title: &gtk::Label) {
   if row > 0 {
     title.set_margin_top(12);
   }
-  grid.attach(title, 0, row, 5, 1);
-  grid.attach(&gtk::Separator::new(gtk::Orientation::Horizontal), 0, row + 1, 5, 1);
+  grid.attach(title, 0, row, ContentColumn::COUNT, 1);
+  grid.attach(
+    &gtk::Separator::new(gtk::Orientation::Horizontal),
+    0,
+    row + 1,
+    ContentColumn::COUNT,
+    1,
+  );
 }
 
 struct StatusRow {
@@ -457,7 +513,7 @@ struct StatusRow {
 }
 
 impl StatusRow {
-  fn attach(grid: &gtk::Grid, row: i32) -> Self {
+  fn new() -> Self {
     let local = label();
     let available = label();
     local.set_size_request(135, -1);
@@ -465,14 +521,18 @@ impl StatusRow {
     let status = label();
     status.set_wrap(true);
     status.set_hexpand(true);
-    grid.attach(&local, 1, row, 1, 1);
-    grid.attach(&available, 2, row, 1, 1);
-    grid.attach(&status, 3, row, 2, 1);
     Self {
       local,
       available,
       status,
     }
+  }
+
+  fn attach(&self, grid: &gtk::Grid, row: i32) {
+    grid.attach(&self.local, ContentColumn::PrimaryValue.index(), row, 1, 1);
+    grid.attach(&self.available, ContentColumn::AvailableVersion.index(), row, 1, 1);
+    let status = ContentColumn::UpdateStatus.index();
+    grid.attach(&self.status, status, row, ContentColumn::COUNT - status, 1);
   }
 
   fn refresh(&self, value: &ComponentStatus) {
