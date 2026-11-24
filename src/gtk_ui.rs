@@ -139,7 +139,7 @@ impl Window {
 
     let notice = label();
     notice.set_wrap(true);
-    notice.set_halign(gtk::Align::End);
+    notice.set_halign(gtk::Align::Start);
     notice.set_valign(gtk::Align::End);
     notice.set_vexpand(true);
     notice.set_margin_top(6);
