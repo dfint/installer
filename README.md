@@ -18,7 +18,11 @@ Localization installer and updater for Dwarf Fortress. Installs localization for
 - Run the game in the usual way (run the game's executable or from the Steam client)
   - Note, that if you are running non-steam linux version of DF, you need to run it using `run_df` file.
 
-![Screenshot](screenshot.png)
+The Linux build uses GTK4. Install the GTK4 runtime if your system does not already have it (`libgtk-4-1` on Debian/Ubuntu or `gtk4` on Fedora). The Windows build uses native Win32 controls.
+
+## Building from source
+
+On Linux, install the GTK4 development package (`libgtk-4-dev` on Debian/Ubuntu or `gtk4-devel` on Fedora) and `pkg-config`. Run `cargo build --release` on Linux or Windows.
 
 ## DFHack compatibility
 

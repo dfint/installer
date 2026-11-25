@@ -15,8 +15,8 @@ pub enum OS {
 impl std::fmt::Display for OS {
   fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
     match self {
-      OS::Linux => std::write!(f, "🐧 Linux"),
-      OS::Windows => std::write!(f, " Windows"),
+      OS::Linux => std::write!(f, "Linux"),
+      OS::Windows => std::write!(f, "Windows"),
     }
   }
 }

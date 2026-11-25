@@ -1,11 +1,5 @@
-use eframe::egui::{
-  Align, Button, CentralPanel, ComboBox, FontId, Grid, Image, Layout, Panel, Spinner, TextStyle, ThemePreference,
-};
-use std::path::PathBuf;
-
 use crate::{
-  constants::*,
-  df_binary::DfBinary,
+  df_binary::{DfBinary, OS},
   dict_metadata::DictMetadata,
   hook_metadata::HookMetadata,
   localization::{LOCALE, t},
@@ -16,22 +10,16 @@ use crate::{
 
 #[derive(PartialEq)]
 pub enum State {
-  Startup,
   Loading,
   Idle,
 }
 
-#[allow(dead_code)]
 pub struct App {
   pub settings: Settings,
   pub pool: ThreadPool<Message>,
-  pub toast: egui_notify::Toasts,
-  pub file_picker_requested: bool,
-  pub opened_file: Option<PathBuf>,
+  pub notice: Option<String>,
+  pub process_checked: bool,
   pub delete_old_data_show: bool,
-  pub delete_hook_show: bool,
-  pub on_start: bool,
-  pub closing: bool,
   pub loading: u8,
   pub df_running: bool,
   pub selected_language: String,
@@ -51,13 +39,9 @@ impl Default for App {
     Self {
       settings: Settings::load(),
       pool: ThreadPool::new(),
-      toast: egui_notify::Toasts::default().with_anchor(egui_notify::Anchor::BottomRight),
-      file_picker_requested: false,
-      opened_file: None,
+      notice: None,
+      process_checked: false,
       delete_old_data_show: false,
-      delete_hook_show: false,
-      on_start: true,
-      closing: false,
       loading: 0,
       df_running: false,
       selected_language: "None".to_string(),
@@ -69,312 +53,169 @@ impl Default for App {
       hook_metadata: HookMetadata::default(),
       dict_metadata: DictMetadata::default(),
       bin: DfBinary::default(),
-      state: State::Startup,
+      state: State::Loading,
     }
   }
 }
 
-impl eframe::App for App {
-  /// Processes pending state updates and renders the installer UI for the current frame.
-  fn ui(&mut self, ui: &mut eframe::egui::Ui, _frame: &mut eframe::Frame) {
-    let ctx = ui.ctx().clone();
-    // handle incoming messages from thread pool
-    self.update_state();
-    // close event
-    if ctx.input(|i| i.viewport().close_requested()) {
-      self.on_close();
-    }
-    // guards
-    if self.df_running {
-      self.guard(
-        &ctx,
-        "df_is_running",
-        &t!("Dwarf Fortress is running. Close it before using the installer."),
-      );
-      return;
-    }
-    // on first update (on startup)
-    if self.state == State::Startup {
-      self.on_start();
-    }
-    // if binary not picked, force to do it
-    if !self.closing && !self.bin.valid && !self.file_picker_requested && self.state == State::Idle {
-      self.file_picker_requested = true;
-    }
-    // if file dialog opened
-    self.opened_file_dialog(&ctx);
-    if self.closing {
-      return;
-    }
-    // if delete old data dialog opened
-    if self.delete_old_data_show {
-      self.delete_old_hook_dialog(&ctx)
-    }
-    // if delete hook dialog opened
-    if self.delete_hook_show {
-      self.delete_hook_dialog(&ctx)
-    }
-    // Keep the interface visible, but inactive, until startup data is loaded.
-    if self.state != State::Idle {
-      ui.disable();
-    }
+#[derive(Clone, Copy)]
+pub enum Status {
+  Loading,
+  Error,
+  Current,
+  Attention,
+}
 
-    // UI block
-    // status bar
-    Panel::bottom("status")
-      .default_size(25.)
-      .size_range(25.0..=f32::INFINITY)
-      .show(ui, |ui| {
-        ui.horizontal_centered(|ui| {
-          ui.add(
-            Image::new(GITHUB_ICON.to_owned())
-              .max_height(15.)
-              .max_width(15.),
-          );
-          ui.hyperlink_to(t!("Report bug"), URL_BUGS);
-          ui.add(
-            Image::new(TRANSIFEX_ICON.to_owned())
-              .max_height(15.)
-              .max_width(15.),
-          );
-          ui.hyperlink_to(t!("Help with translation"), URL_TRANSIFEX);
-          ui.label(format!("v{VERSION}"));
-          ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-            if self.any_localization_files_present() {
-              let button = ui
-                .add_sized([20., 20.], Button::new("🗑"))
-                .on_hover_text(t!("Delete localization files"));
-              if button.clicked() {
-                self.delete_hook_show = true;
-              }
-            }
-            ComboBox::from_id_salt("locale")
-              .selected_text(&self.ui_locale)
-              .width(50.)
-              .show_ui(ui, |ui| {
-                let mut lock = LOCALE.write();
-                for item in lock.locales() {
-                  if ui
-                    .selectable_value(&mut self.ui_locale, item.clone(), item.clone())
-                    .clicked()
-                  {
-                    lock.set(&item)
-                  }
-                }
-              });
-            let theme = ctx.options(|options| options.theme_preference);
-            let (fill, tooltip) = match theme {
-              ThemePreference::System => (egui::Color32::TRANSPARENT, t!("System theme")),
-              ThemePreference::Light => (egui::Color32::WHITE, t!("Light theme")),
-              ThemePreference::Dark => (egui::Color32::BLACK, t!("Dark theme")),
-            };
-            let button = ui
-              .add_sized([20., 20.], Button::new(""))
-              .on_hover_text(tooltip);
-            let center = button.rect.center();
-            let radius = 5.;
-            let stroke = ui.style().interact(&button).fg_stroke;
-            ui.painter().circle(center, radius, fill, stroke);
-            if theme == ThemePreference::System {
-              let points = (0..=12)
-                .map(|step| {
-                  let angle = std::f32::consts::PI * (0.5 + step as f32 / 12.);
-                  center + radius * eframe::egui::Vec2::angled(angle)
-                })
-                .collect();
-              ui.painter().add(eframe::egui::Shape::convex_polygon(
-                points,
-                stroke.color,
-                eframe::egui::Stroke::NONE,
-              ));
-            }
-            if button.clicked() {
-              let system_theme = ctx
-                .system_theme()
-                .unwrap_or_else(|| ctx.options(|options| options.fallback_theme));
-              let (opposite, matching) = match system_theme {
-                egui::Theme::Dark => (ThemePreference::Light, ThemePreference::Dark),
-                egui::Theme::Light => (ThemePreference::Dark, ThemePreference::Light),
-              };
-              let next = match theme {
-                ThemePreference::System => opposite,
-                current if current == opposite => matching,
-                _ => ThemePreference::System,
-              };
-              ctx.set_theme(next);
-              self.settings.theme = next.name().into();
-              if let Err(err) = self.settings.save() {
-                self
-                  .toast
-                  .error(format!("{} {err}", t!("Unable to save theme preference.")));
-              }
-            }
-          });
-        });
-      });
-
-    CentralPanel::default().show(ui, |ui| {
-      ui.add_space(5.);
-      ui.heading("Dwarf Fortress");
-      ui.separator();
-      Grid::new("executable grid")
-        .num_columns(2)
-        .min_col_width(150.)
-        .max_col_width(450.)
-        .spacing([5., 5.])
-        .striped(true)
-        .show(ui, |ui| {
-          ui.label(t!("Path"));
-          ui.label(self.bin.to_string());
-          if ui.small_button("🔍").clicked() {
-            self.file_picker_requested = true;
-          };
-          ui.end_row();
-          ui.label(t!("Version"));
-          ui.label(format!(
-            "{} | {} | {}",
-            self.bin.version,
-            self.bin.os,
-            match self.bin.steam {
-              true => "steam",
-              false => "non-steam",
-            }
-          ));
-          ui.end_row();
-          ui.label(t!("Checksum"));
-          ui.label(format!("{:x}", self.bin.checksum));
-          ui.end_row();
-        });
-      ui.add_space(20.);
-
-      ui.horizontal(|ui| {
-        ui.heading(t!("Hook"));
-      });
-      ui.separator();
-
-      Grid::new("hook grid")
-        .num_columns(4)
-        .min_col_width(150.)
-        .spacing([5., 5.])
-        .striped(true)
-        .show(ui, |ui| {
-          ui.label(t!("Version"));
-          ui.label(self.hook_checksum.to_string());
-
-          if self.hook_metadata.manifest.checksum == 0 {
-            ui.label("?");
-          } else {
-            ui.label(self.hook_metadata.manifest.checksum.to_string());
-          }
-
-          let (text, color) = if self.state != State::Idle || self.hook_metadata_loading {
-            (format!("○ {}", t!("loading data")), COLOR_LOADING)
-          } else {
-            match (
-              self.hook_metadata.manifest.df == self.bin.checksum,
-              self.hook_metadata.manifest.checksum == self.hook_checksum,
-              self.hook_metadata.manifest.checksum == 0,
-              self.hook_metadata.vec_manifests.is_empty(),
-            ) {
-              (_, _, true, true) => (format!("✖ {}", t!("hook data was not loaded")), COLOR_ERROR),
-              (false, _, _, _) => (format!("✖ {}", t!("this DF version is not supported")), COLOR_ERROR),
-              (true, true, _, _) => (format!("✅ {}", t!("up-to-date")), COLOR_UP_TO_DATE),
-              (true, false, _, _) => (format!("⚠ {}", t!("update available")), COLOR_UPDATE_AVAILABLE),
-            }
-          };
-          ui.colored_label(color, text);
-
-          ui.end_row();
-        });
-      ui.add_space(20.);
-
-      ui.heading(t!("Dictionary"));
-      ui.separator();
-
-      Grid::new("dictionary grid")
-        .num_columns(4)
-        .min_col_width(150.)
-        .spacing([5., 5.])
-        .striped(true)
-        .show(ui, |ui| {
-          ComboBox::from_id_salt("languages")
-            .selected_text(&self.selected_language)
-            .width(140.)
-            .show_ui(ui, |ui| {
-              for item in self.dict_metadata.vec_manifests.clone().iter() {
-                if ui
-                  .selectable_value(
-                    &mut self.selected_language,
-                    item.language.clone(),
-                    item.language.clone(),
-                  )
-                  .clicked()
-                  && self.selected_language != "None"
-                {
-                  self
-                    .dict_metadata
-                    .pick_language_by_name(self.selected_language.clone())
-                }
-              }
-            });
-          ui.label(self.dict_checksum.to_string());
-          if self.dict_metadata.manifest.checksum == 0 {
-            ui.label("?");
-          } else {
-            ui.label(self.dict_metadata.manifest.checksum.to_string());
-          }
-
-          let (text, color) = if self.state != State::Idle || self.dict_metadata_loading {
-            (format!("○ {}", t!("loading data")), COLOR_LOADING)
-          } else {
-            match (
-              self.dict_metadata.manifest.checksum == self.dict_checksum,
-              self.selected_language == "None",
-              self.dict_metadata.vec_manifests.is_empty(),
-            ) {
-              (_, _, true) => (format!("✖ {}", t!("dictionary data was not loaded")), COLOR_ERROR),
-              (true, false, false) => (format!("✅ {}", t!("up-to-date")), COLOR_UP_TO_DATE),
-              (false, false, false) => (format!("⚠ {}", t!("update available")), COLOR_UPDATE_AVAILABLE),
-              (_, true, false) => (format!("⚠ {}", t!("choose language")), COLOR_CHOOSE_LANGUAGE),
-            }
-          };
-          ui.colored_label(color, text);
-          ui.end_row();
-        });
-      ui.add_space(20.);
-
-      if (self.hook_metadata.manifest.df == self.bin.checksum
-        && self.hook_metadata.manifest.checksum != self.hook_checksum)
-        || (self.dict_metadata.manifest.checksum != self.dict_checksum && self.selected_language != "None")
-      {
-        ui.style_mut().text_styles.insert(
-          TextStyle::Button,
-          FontId::new(20., eframe::egui::FontFamily::Proportional),
-        );
-        ui.vertical_centered(|ui| {
-          if self.loading > 0 {
-            ui.add(Spinner::new().size(40.));
-          } else {
-            let button_text = if self.clean_installation() {
-              t!("Install")
-            } else {
-              t!("Update")
-            };
-            let button = ui.add_sized([130., 40.], Button::new(button_text));
-            if button.clicked() {
-              self.update_data();
-            }
-          }
-        });
-      }
-    });
-
-    self.toast.show(&ctx);
-
-    if self.state != State::Idle {
-      egui::Modal::new(egui::Id::unique("startup_loading")).show(&ctx, |ui| {
-        ui.add(Spinner::new().size(40.));
-      });
+impl Status {
+  #[cfg(target_os = "linux")]
+  pub fn symbol(self) -> &'static str {
+    match self {
+      Self::Loading => "○",
+      Self::Error => "✕",
+      Self::Current => "✓",
+      Self::Attention => "⚠",
     }
   }
+
+  pub fn color(self, dark_background: bool) -> (u8, u8, u8) {
+    match (self, dark_background) {
+      (Self::Loading, false) => (29, 92, 173),
+      (Self::Error, false) => (177, 38, 38),
+      (Self::Current, false) => (28, 112, 48),
+      (Self::Attention, false) => (137, 94, 0),
+      (Self::Loading, true) => (112, 173, 255),
+      (Self::Error, true) => (255, 115, 115),
+      (Self::Current, true) => (106, 192, 110),
+      (Self::Attention, true) => (230, 184, 0),
+    }
+  }
+}
+
+pub struct ComponentStatus {
+  pub local: String,
+  pub available: String,
+  pub text: String,
+  pub status: Status,
+}
+
+pub struct View {
+  pub path: String,
+  pub version: String,
+  pub platform: OS,
+  pub distribution: &'static str,
+  pub checksum: String,
+  pub hook: ComponentStatus,
+  pub dictionary: ComponentStatus,
+  pub languages: Vec<String>,
+  pub action: String,
+  pub can_update: bool,
+  pub has_localization: bool,
+  pub ready: bool,
+  pub busy: bool,
+}
+
+impl App {
+  pub fn ready(&self) -> bool {
+    self.state == State::Idle && self.process_checked && !self.df_running
+  }
+
+  pub fn select_language(&mut self, language: String) {
+    self.dict_metadata.pick_language_by_name(language.clone());
+    self.selected_language = language;
+  }
+
+  pub fn select_locale(&mut self, locale: String) {
+    LOCALE.write().set(&locale);
+    self.ui_locale = locale;
+  }
+
+  pub fn hook_update_available(&self) -> bool {
+    let hook = &self.hook_metadata.manifest;
+    hook.checksum != 0 && hook.df == self.bin.checksum && hook.checksum != self.hook_checksum
+  }
+
+  pub fn dictionary_update_available(&self) -> bool {
+    let dict = &self.dict_metadata.manifest;
+    dict.checksum != 0 && dict.checksum != self.dict_checksum && self.selected_language != "None"
+  }
+
+  pub fn view(&self) -> View {
+    let ready = self.ready() && self.bin.valid;
+    let busy = self.loading > 0;
+    let hook = &self.hook_metadata.manifest;
+    let dict = &self.dict_metadata.manifest;
+    let hook_status = if !ready || self.hook_metadata_loading {
+      (Status::Loading, t!("loading data"))
+    } else if self.hook_metadata.vec_manifests.is_empty() && hook.checksum == 0 {
+      (Status::Error, t!("hook data was not loaded"))
+    } else if hook.df != self.bin.checksum {
+      (Status::Error, t!("this DF version is not supported"))
+    } else if hook.checksum == self.hook_checksum {
+      (Status::Current, t!("up-to-date"))
+    } else {
+      (Status::Attention, t!("update available"))
+    };
+    let dict_status = if !ready || self.dict_metadata_loading {
+      (Status::Loading, t!("loading data"))
+    } else if self.dict_metadata.vec_manifests.is_empty() {
+      (Status::Error, t!("dictionary data was not loaded"))
+    } else if self.selected_language == "None" {
+      (Status::Attention, t!("choose language"))
+    } else if dict.checksum == self.dict_checksum {
+      (Status::Current, t!("up-to-date"))
+    } else {
+      (Status::Attention, t!("update available"))
+    };
+    let has_localization = self.bin.valid && self.any_localization_files_present();
+    View {
+      path: self.bin.to_string(),
+      version: format!("{} |", self.bin.version),
+      platform: self.bin.os,
+      distribution: if self.bin.steam { "steam" } else { "non-steam" },
+      checksum: format!("{:x}", self.bin.checksum),
+      hook: component_status(self.hook_checksum, hook.checksum, hook_status),
+      dictionary: component_status(self.dict_checksum, dict.checksum, dict_status),
+      languages: self
+        .dict_metadata
+        .vec_manifests
+        .iter()
+        .map(|item| item.language.clone())
+        .collect(),
+      action: if has_localization { t!("Update") } else { t!("Install") },
+      can_update: ready && !busy && (self.hook_update_available() || self.dictionary_update_available()),
+      has_localization,
+      ready,
+      busy,
+    }
+  }
+}
+
+fn component_status(local: u32, available: u32, (status, text): (Status, String)) -> ComponentStatus {
+  ComponentStatus {
+    local: local.to_string(),
+    available: if available == 0 {
+      "?".into()
+    } else {
+      available.to_string()
+    },
+    text,
+    status,
+  }
+}
+
+pub fn locales(current: &str) -> Vec<String> {
+  let mut locales = LOCALE.read().locales();
+  if !locales.iter().any(|locale| locale == current) {
+    locales.push(current.into());
+  }
+  locales.sort();
+  locales
+}
+
+pub fn running_warning() -> String {
+  t!("Dwarf Fortress is running. Close it before using the installer.")
+}
+
+pub fn old_data_warning() -> String {
+  t!("Old version of translation files has been detected. It's better to delete them to avoid conflicts. Delete?")
 }

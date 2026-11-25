@@ -44,7 +44,6 @@ impl Cache {
 mod tests {
   use super::*;
   use crate::settings::Settings;
-  use egui::ThemePreference;
   use std::path::PathBuf;
 
   #[test]
@@ -57,11 +56,11 @@ mod tests {
     let settings: Settings = serde_json::from_value(legacy.clone()).unwrap();
     assert_eq!(settings.bin, PathBuf::from("dwarfort"));
     assert_eq!(settings.selected_language, "English");
-    assert_eq!(settings.theme_preference(), ThemePreference::System);
+    assert_eq!(settings.theme, "system");
 
     legacy["theme"] = serde_json::json!("dark");
     let settings: Settings = serde_json::from_value(legacy.clone()).unwrap();
-    assert_eq!(settings.theme_preference(), ThemePreference::Dark);
+    assert_eq!(settings.theme, "dark");
 
     let cache: Cache = serde_json::from_value(legacy).unwrap();
     assert_eq!(cache.hook_manifest.checksum, 42);
