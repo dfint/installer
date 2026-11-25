@@ -14,8 +14,8 @@ pub const BASE_URL: [&str; 2] = [
 
 pub const URL_HOOK_MANIFEST: &str = "/update-data/metadata/hook_v3.json";
 pub const URL_DICT_MANIFEST: &str = "/update-data/metadata/dict_v3.json";
-pub const URL_BUGS: &str = "https://github.com/dfint/installer/issues";
-pub const URL_TRANSIFEX: &str = "https://explore.transifex.com/dwarf-fortress-translation/dwarf-fortress-steam/";
+pub const BUG_REPORT_URL: &str = "https://github.com/dfint/installer/issues";
+pub const TRANSLATION_HELP_URL: &str = "https://explore.transifex.com/dwarf-fortress-translation/dwarf-fortress-steam/";
 
 pub const PATH_DATA: &str = "dfint-data";
 pub const PATH_CONFIG: &str = "dfint-data/config.toml";

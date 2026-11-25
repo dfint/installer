@@ -41,15 +41,15 @@ const SS_NOTIFY: u32 = 0x0100;
 const SS_ETCHEDHORZ: u32 = 0x0010;
 const SS_NOPREFIX: u32 = 0x0080;
 const ACTION: u32 = WM_APP + 1;
-const BROWSE: usize = 100;
-const LANGUAGE: usize = 101;
-const LOCALE_SELECT: usize = 102;
-const INSTALL: usize = 103;
-const REMOVE: usize = 104;
-const BUG_LINK: usize = 105;
-const TRANSIFEX_LINK: usize = 106;
-const BUG_ICON: usize = 107;
-const TRANSIFEX_ICON: usize = 108;
+const BROWSE_EXECUTABLE_BUTTON_ID: usize = 100;
+const DICTIONARY_LANGUAGE_SELECTOR_ID: usize = 101;
+const INTERFACE_LANGUAGE_SELECTOR_ID: usize = 102;
+const INSTALL_OR_UPDATE_BUTTON_ID: usize = 103;
+const REMOVE_LOCALIZATION_BUTTON_ID: usize = 104;
+const BUG_REPORT_LINK_ID: usize = 105;
+const TRANSLATION_HELP_LINK_ID: usize = 106;
+const BUG_REPORT_ICON_ID: usize = 107;
+const TRANSLATION_HELP_ICON_ID: usize = 108;
 
 const GITHUB_RESOURCE: usize = 2;
 const TRANSIFEX_RESOURCE: usize = 3;
@@ -111,11 +111,11 @@ pub fn run() -> anyhow::Result<()> {
 
     let ui = Window::new(window, dpi)?;
     let mut app = App::default();
-    let mut languages = Vec::new();
-    let locale_options = locales(&LOCALE.read().current_locale());
-    fill_combo(ui.locale, &locale_options);
+    let mut dictionary_language_options = Vec::new();
+    let interface_language_options = locales(&LOCALE.read().current_locale());
+    fill_combo(ui.interface_language_selector, &interface_language_options);
     app.on_start();
-    ui.refresh(&app, &mut languages, &locale_options);
+    ui.refresh(&app, &mut dictionary_language_options, &interface_language_options);
     anyhow::ensure!(SetTimer(window, 1, 100, None) != 0, std::io::Error::last_os_error());
     ShowWindow(window, SW_SHOWDEFAULT);
 
@@ -130,11 +130,16 @@ pub fn run() -> anyhow::Result<()> {
         let changed = if message.message == WM_TIMER {
           app.update_state()
         } else {
-          ui.action(&mut app, message.wParam, &languages, &locale_options);
+          ui.action(
+            &mut app,
+            message.wParam,
+            &dictionary_language_options,
+            &interface_language_options,
+          );
           true
         };
         if changed {
-          ui.refresh(&app, &mut languages, &locale_options);
+          ui.refresh(&app, &mut dictionary_language_options, &interface_language_options);
           if app.df_running {
             ui.warning(&running_warning(), MB_OK);
             DestroyWindow(window);
@@ -144,7 +149,7 @@ pub fn run() -> anyhow::Result<()> {
             }
             if IsWindow(window) != 0 {
               ui.confirm_old_data(&mut app);
-              ui.refresh(&app, &mut languages, &locale_options);
+              ui.refresh(&app, &mut dictionary_language_options, &interface_language_options);
             }
           }
         }
@@ -166,9 +171,11 @@ unsafe extern "system" fn window_proc(window: HWND, message: u32, wparam: WPARAM
         let notification = (wparam >> 16) as u32;
         let control_event = lparam != 0
           && match id {
-            LANGUAGE | LOCALE_SELECT => notification == CBN_SELCHANGE,
-            BROWSE | INSTALL | REMOVE => notification == BN_CLICKED,
-            BUG_ICON | TRANSIFEX_ICON => notification == STN_CLICKED,
+            DICTIONARY_LANGUAGE_SELECTOR_ID | INTERFACE_LANGUAGE_SELECTOR_ID => notification == CBN_SELCHANGE,
+            BROWSE_EXECUTABLE_BUTTON_ID | INSTALL_OR_UPDATE_BUTTON_ID | REMOVE_LOCALIZATION_BUTTON_ID => {
+              notification == BN_CLICKED
+            }
+            BUG_REPORT_ICON_ID | TRANSLATION_HELP_ICON_ID => notification == STN_CLICKED,
             _ => false,
           };
         if control_event {
@@ -176,14 +183,19 @@ unsafe extern "system" fn window_proc(window: HWND, message: u32, wparam: WPARAM
         }
         0
       }
-      WM_NOTIFY if lparam != 0 && matches!(wparam, BUG_LINK | TRANSIFEX_LINK) => {
+      WM_NOTIFY if lparam != 0 && matches!(wparam, BUG_REPORT_LINK_ID | TRANSLATION_HELP_LINK_ID) => {
         let header = &*(lparam as *const NMHDR);
         if matches!(header.code, NM_CLICK | NM_RETURN) {
           PostMessageW(window, ACTION, wparam, 0);
         }
         0
       }
-      WM_SETCURSOR if matches!(GetDlgCtrlID(wparam as HWND) as usize, BUG_ICON | TRANSIFEX_ICON) => {
+      WM_SETCURSOR
+        if matches!(
+          GetDlgCtrlID(wparam as HWND) as usize,
+          BUG_REPORT_ICON_ID | TRANSLATION_HELP_ICON_ID
+        ) =>
+      {
         SetCursor(LoadCursorW(null_mut(), IDC_HAND));
         1
       }
@@ -232,28 +244,28 @@ struct Window {
   font: HFONT,
   heading_font: HFONT,
   dpi: u32,
-  path_title: HWND,
-  version_title: HWND,
-  checksum_title: HWND,
-  path: HWND,
-  version: HWND,
-  platform_icon: HWND,
-  platform: HWND,
-  checksum: HWND,
-  browse: HWND,
-  hook_title: HWND,
-  hook_version: HWND,
-  hook: StatusRow,
-  dict_title: HWND,
-  dict: StatusRow,
-  languages: HWND,
-  locale: HWND,
-  install: HWND,
-  remove: HWND,
-  notice: HWND,
-  bugs: FooterLink,
-  translations: FooterLink,
-  build: HWND,
+  game_path_label: HWND,
+  game_version_label: HWND,
+  game_checksum_label: HWND,
+  game_path_value: HWND,
+  game_version_value: HWND,
+  game_platform_icon: HWND,
+  game_platform_label: HWND,
+  game_checksum_value: HWND,
+  browse_executable_button: HWND,
+  hook_section_heading: HWND,
+  hook_version_label: HWND,
+  hook_status_row: StatusRow,
+  dictionary_section_heading: HWND,
+  dictionary_status_row: StatusRow,
+  dictionary_language_selector: HWND,
+  interface_language_selector: HWND,
+  install_or_update_button: HWND,
+  remove_localization_button: HWND,
+  operation_notice_label: HWND,
+  bug_report_link: FooterLink,
+  translation_help_link: FooterLink,
+  installer_version_label: HWND,
 }
 
 impl Window {
@@ -331,10 +343,10 @@ impl Window {
     let status_row = |[installed, available, status]: [ControlId; 3], y_offset| {
       let [x, y, width, height] = control_bounds(status, y_offset, 34);
       Ok::<_, anyhow::Error>(StatusRow {
-        local: label(control_bounds(installed, y_offset, 24))?,
-        available: label(control_bounds(available, y_offset, 24))?,
-        icon: create(w!("STATIC"), "", SS_ICON, 0, [x, y, 16, 16])?,
-        status: label([x + 22, y, width - 22, height])?,
+        installed_version_label: label(control_bounds(installed, y_offset, 24))?,
+        available_version_label: label(control_bounds(available, y_offset, 24))?,
+        update_status_icon: create(w!("STATIC"), "", SS_ICON, 0, [x, y, 16, 16])?,
+        update_status_label: label([x + 22, y, width - 22, height])?,
       })
     };
 
@@ -349,34 +361,34 @@ impl Window {
       use ControlId::*;
       heading("Dwarf Fortress", control_bounds(GameDetailsHeading, 0, 22))?;
       separator(row_y(ContentRow::Heading(SectionHeading::GameDetails)) + 25)?;
-      let path_title = label(control_bounds(GamePathLabel, 4, 22))?;
+      let game_path_label = label(control_bounds(GamePathLabel, 4, 22))?;
       let [x, y, width, height] = control_bounds(GamePathValue, 1, 23);
-      let path = create(
+      let game_path_value = create(
         w!("EDIT"),
         "",
         WS_BORDER | WS_TABSTOP | (ES_READONLY | ES_AUTOHSCROLL) as u32,
         0,
         [x, y, width - 6, height],
       )?;
-      let browse = button(BROWSE, control_bounds(BrowseExecutable, 0, 25))?;
-      set_text(browse, "…");
-      let version_title = label(control_bounds(GameVersionLabel, 0, 22))?;
-      let version = label(control_bounds(GameVersionValue, 0, 22))?;
-      let platform_icon = create(w!("STATIC"), "", SS_ICON, 0, [0, 0, 16, 16])?;
-      let platform = label([0, 0, 425, 22])?;
-      let checksum_title = label(control_bounds(GameChecksumLabel, 0, 22))?;
-      let checksum = label(control_bounds(GameChecksumValue, 0, 22))?;
+      let browse_executable_button = button(BROWSE_EXECUTABLE_BUTTON_ID, control_bounds(BrowseExecutable, 0, 25))?;
+      set_text(browse_executable_button, "…");
+      let game_version_label = label(control_bounds(GameVersionLabel, 0, 22))?;
+      let game_version_value = label(control_bounds(GameVersionValue, 0, 22))?;
+      let game_platform_icon = create(w!("STATIC"), "", SS_ICON, 0, [0, 0, 16, 16])?;
+      let game_platform_label = label([0, 0, 425, 22])?;
+      let game_checksum_label = label(control_bounds(GameChecksumLabel, 0, 22))?;
+      let game_checksum_value = label(control_bounds(GameChecksumValue, 0, 22))?;
 
-      let hook_title = heading("", control_bounds(HookHeading, 0, 23))?;
+      let hook_section_heading = heading("", control_bounds(HookHeading, 0, 23))?;
       separator(row_y(ContentRow::Heading(SectionHeading::Hook)) + 28)?;
-      let hook_version = label(control_bounds(HookVersionLabel, 0, 24))?;
-      let hook = status_row([HookInstalledVersion, HookAvailableVersion, HookUpdateStatus], 0)?;
+      let hook_version_label = label(control_bounds(HookVersionLabel, 0, 24))?;
+      let hook_status_row = status_row([HookInstalledVersion, HookAvailableVersion, HookUpdateStatus], 0)?;
 
-      let dict_title = heading("", control_bounds(DictionaryHeading, 0, 22))?;
+      let dictionary_section_heading = heading("", control_bounds(DictionaryHeading, 0, 22))?;
       separator(row_y(ContentRow::Heading(SectionHeading::Dictionary)) + 27)?;
       let [x, y, width, height] = control_bounds(DictionaryLanguageSelector, 0, 190);
-      let languages = combo(LANGUAGE, [x, y, width - 11, height])?;
-      let dict = status_row(
+      let dictionary_language_selector = combo(DICTIONARY_LANGUAGE_SELECTOR_ID, [x, y, width - 11, height])?;
+      let dictionary_status_row = status_row(
         [
           DictionaryInstalledVersion,
           DictionaryAvailableVersion,
@@ -386,8 +398,11 @@ impl Window {
       )?;
 
       let [x, y, width, height] = control_bounds(InstallOrUpdate, 0, INSTALL_HEIGHT);
-      let install = button(INSTALL, [x + (width - INSTALL_WIDTH) / 2, y, INSTALL_WIDTH, height])?;
-      let notice = label(control_bounds(OperationNotice, 0, 39))?;
+      let install_or_update_button = button(
+        INSTALL_OR_UPDATE_BUTTON_ID,
+        [x + (width - INSTALL_WIDTH) / 2, y, INSTALL_WIDTH, height],
+      )?;
+      let operation_notice_label = label(control_bounds(OperationNotice, 0, 39))?;
       let bar = create(STATUSCLASSNAMEW, "", WS_CLIPCHILDREN, 0, [0, 0, 0, 0])?;
       unsafe {
         let style = GetWindowLongPtrW(bar, GWL_EXSTYLE);
@@ -399,53 +414,58 @@ impl Window {
         SendMessageW(bar, SB_SETMINHEIGHT, scale(39, dpi) as WPARAM, 0);
         SendMessageW(bar, WM_SIZE, 0, 0);
       }
-      let bugs = footer_link(bar, BUG_LINK, BUG_ICON, GITHUB_RESOURCE)?;
-      let translations = footer_link(bar, TRANSIFEX_LINK, TRANSIFEX_ICON, TRANSIFEX_RESOURCE)?;
-      let build = create_child(bar, w!("STATIC"), &format!("v{VERSION}"), 0, 0, [535, 15, 75, 22])?;
-      let locale = create_child(
+      let bug_report_link = footer_link(bar, BUG_REPORT_LINK_ID, BUG_REPORT_ICON_ID, GITHUB_RESOURCE)?;
+      let translation_help_link = footer_link(
+        bar,
+        TRANSLATION_HELP_LINK_ID,
+        TRANSLATION_HELP_ICON_ID,
+        TRANSIFEX_RESOURCE,
+      )?;
+      let installer_version_label = create_child(bar, w!("STATIC"), &format!("v{VERSION}"), 0, 0, [535, 15, 75, 22])?;
+      let interface_language_selector = create_child(
         bar,
         w!("COMBOBOX"),
         "",
         WS_TABSTOP | WS_VSCROLL | CBS_DROPDOWNLIST as u32,
-        LOCALE_SELECT,
+        INTERFACE_LANGUAGE_SELECTOR_ID,
         [640, 9, 71, 200],
       )?;
-      let remove = create_child(
+      let remove_localization_button = create_child(
         bar,
         w!("BUTTON"),
         "",
         WS_TABSTOP | BS_ICON as u32,
-        REMOVE,
+        REMOVE_LOCALIZATION_BUTTON_ID,
         [680, 8, 31, 25],
       )?;
-      set_icon(remove, BM_SETIMAGE, TRASH_RESOURCE, scale(16, dpi));
+      set_icon(remove_localization_button, BM_SETIMAGE, TRASH_RESOURCE, scale(16, dpi));
       Ok(Self {
         handle,
         font,
         heading_font,
         dpi,
-        path_title,
-        version_title,
-        checksum_title,
-        path,
-        version,
-        platform_icon,
-        platform,
-        checksum,
-        browse,
-        hook_title,
-        hook_version,
-        hook,
-        dict_title,
-        dict,
-        languages,
-        locale,
-        install,
-        remove,
-        notice,
-        bugs,
-        translations,
-        build,
+        game_path_label,
+        game_version_label,
+        game_checksum_label,
+        game_path_value,
+        game_version_value,
+        game_platform_icon,
+        game_platform_label,
+        game_checksum_value,
+        browse_executable_button,
+        hook_section_heading,
+        hook_version_label,
+        hook_status_row,
+        dictionary_section_heading,
+        dictionary_status_row,
+        dictionary_language_selector,
+        interface_language_selector,
+        install_or_update_button,
+        remove_localization_button,
+        operation_notice_label,
+        bug_report_link,
+        translation_help_link,
+        installer_version_label,
       })
     })();
     if result.is_err() {
@@ -462,71 +482,97 @@ impl Window {
     result
   }
 
-  fn refresh(&self, app: &App, languages: &mut Vec<String>, locale_options: &[String]) {
+  fn refresh(&self, app: &App, dictionary_language_options: &mut Vec<String>, interface_language_options: &[String]) {
     let view = app.view();
-    set_text(self.path_title, &t!("Path"));
-    set_text(self.version_title, &t!("Version"));
-    set_text(self.checksum_title, &t!("Checksum"));
-    set_text(self.path, &view.path);
-    set_text(self.version, &view.version);
-    set_text(self.platform, &format!("{} | {}", view.platform, view.distribution));
+    set_text(self.game_path_label, &t!("Path"));
+    set_text(self.game_version_label, &t!("Version"));
+    set_text(self.game_checksum_label, &t!("Checksum"));
+    set_text(self.game_path_value, &view.path);
+    set_text(self.game_version_value, &view.version);
+    set_text(
+      self.game_platform_label,
+      &format!("{} | {}", view.platform, view.distribution),
+    );
     let resource = match view.platform {
       OS::Linux => LINUX_RESOURCE,
       OS::Windows => WINDOWS_RESOURCE,
     };
-    set_icon(self.platform_icon, STM_SETICON, resource, scale(16, self.dpi));
+    set_icon(self.game_platform_icon, STM_SETICON, resource, scale(16, self.dpi));
     self.place_version(&view.version, app.bin.valid);
-    set_text(self.checksum, &view.checksum);
-    set_text(self.hook_title, &t!("Hook"));
-    set_text(self.hook_version, &t!("Version"));
-    self.hook.refresh(&view.hook, self.dpi);
-    set_text(self.dict_title, &t!("Dictionary"));
-    self.dict.refresh(&view.dictionary, self.dpi);
-    if *languages != view.languages {
-      fill_combo(self.languages, &view.languages);
-      *languages = view.languages;
+    set_text(self.game_checksum_value, &view.checksum);
+    set_text(self.hook_section_heading, &t!("Hook"));
+    set_text(self.hook_version_label, &t!("Version"));
+    self.hook_status_row.refresh(&view.hook, self.dpi);
+    set_text(self.dictionary_section_heading, &t!("Dictionary"));
+    self
+      .dictionary_status_row
+      .refresh(&view.dictionary, self.dpi);
+    if *dictionary_language_options != view.languages {
+      fill_combo(self.dictionary_language_selector, &view.languages);
+      *dictionary_language_options = view.languages;
     }
-    select_combo(self.languages, languages, &app.selected_language);
-    select_combo(self.locale, locale_options, &app.ui_locale);
-    set_text(self.install, &view.action);
-    set_text(self.remove, &t!("Delete localization files"));
+    select_combo(
+      self.dictionary_language_selector,
+      dictionary_language_options,
+      &app.selected_language,
+    );
+    select_combo(
+      self.interface_language_selector,
+      interface_language_options,
+      &app.ui_locale,
+    );
+    set_text(self.install_or_update_button, &view.action);
+    set_text(self.remove_localization_button, &t!("Delete localization files"));
     if !app.ready() || view.busy {
-      set_text(self.notice, &t!("loading data"));
+      set_text(self.operation_notice_label, &t!("loading data"));
     } else {
-      set_text(self.notice, app.notice.as_deref().unwrap_or_default());
+      set_text(self.operation_notice_label, app.notice.as_deref().unwrap_or_default());
     }
     self.refresh_footer(view.has_localization);
     unsafe {
-      EnableWindow(self.browse, (view.ready && !view.busy).into());
+      EnableWindow(self.browse_executable_button, (view.ready && !view.busy).into());
       EnableWindow(
-        self.languages,
-        (view.ready && !view.busy && !languages.is_empty()).into(),
+        self.dictionary_language_selector,
+        (view.ready && !view.busy && !dictionary_language_options.is_empty()).into(),
       );
-      ShowWindow(self.install, if view.can_update { SW_SHOWNA } else { SW_HIDE });
-      ShowWindow(self.remove, if view.has_localization { SW_SHOWNA } else { SW_HIDE });
-      EnableWindow(self.remove, (view.ready && !view.busy).into());
+      ShowWindow(
+        self.install_or_update_button,
+        if view.can_update { SW_SHOWNA } else { SW_HIDE },
+      );
+      ShowWindow(
+        self.remove_localization_button,
+        if view.has_localization { SW_SHOWNA } else { SW_HIDE },
+      );
+      EnableWindow(self.remove_localization_button, (view.ready && !view.busy).into());
     }
   }
 
   fn place_version(&self, version: &str, show_icon: bool) {
-    let width = text_width(self.version, self.font, version) + scale(4, self.dpi);
+    let width = text_width(self.game_version_value, self.font, version) + scale(4, self.dpi);
     let [left, top, available_width, _] = control_bounds(ControlId::GameVersionValue, 0, 22);
     let x = scale(left, self.dpi);
     let icon_size = scale(16, self.dpi);
     let platform_x = x + width + if show_icon { scale(21, self.dpi) } else { 0 };
     unsafe {
-      MoveWindow(self.version, x, scale(top, self.dpi), width, scale(22, self.dpi), 1);
       MoveWindow(
-        self.platform_icon,
+        self.game_version_value,
+        x,
+        scale(top, self.dpi),
+        width,
+        scale(22, self.dpi),
+        1,
+      );
+      MoveWindow(
+        self.game_platform_icon,
         x + width,
         scale(top - 2, self.dpi),
         icon_size,
         icon_size,
         1,
       );
-      ShowWindow(self.platform_icon, if show_icon { SW_SHOWNA } else { SW_HIDE });
+      ShowWindow(self.game_platform_icon, if show_icon { SW_SHOWNA } else { SW_HIDE });
       MoveWindow(
-        self.platform,
+        self.game_platform_label,
         platform_x,
         scale(top, self.dpi),
         (scale(left + available_width, self.dpi) - platform_x).max(0),
@@ -559,9 +605,11 @@ impl Window {
 
   fn footer_width(&self, item: FooterItem, show_remove: bool) -> i32 {
     match item {
-      FooterItem::ExternalLink(FooterLinkTarget::ReportBug) => self.bugs.measure(FooterLinkTarget::ReportBug, self.dpi),
+      FooterItem::ExternalLink(FooterLinkTarget::ReportBug) => self
+        .bug_report_link
+        .measure(FooterLinkTarget::ReportBug, self.dpi),
       FooterItem::ExternalLink(FooterLinkTarget::HelpWithTranslation) => self
-        .translations
+        .translation_help_link
         .measure(FooterLinkTarget::HelpWithTranslation, self.dpi),
       FooterItem::InstallerVersion => scale(75, self.dpi),
       FooterItem::InterfaceLanguageSelector => scale(71, self.dpi),
@@ -577,38 +625,44 @@ impl Window {
 
   fn place_footer_item(&self, item: FooterItem, x: i32, width: i32) {
     let (control, y, height) = match item {
-      FooterItem::ExternalLink(FooterLinkTarget::ReportBug) => return self.bugs.place(x, width, self.dpi),
+      FooterItem::ExternalLink(FooterLinkTarget::ReportBug) => return self.bug_report_link.place(x, width, self.dpi),
       FooterItem::ExternalLink(FooterLinkTarget::HelpWithTranslation) => {
-        return self.translations.place(x, width, self.dpi);
+        return self.translation_help_link.place(x, width, self.dpi);
       }
-      FooterItem::InstallerVersion => (self.build, 15, 22),
-      FooterItem::InterfaceLanguageSelector => (self.locale, 9, 200),
-      FooterItem::RemoveLocalizationButton => (self.remove, 8, 25),
+      FooterItem::InstallerVersion => (self.installer_version_label, 15, 22),
+      FooterItem::InterfaceLanguageSelector => (self.interface_language_selector, 9, 200),
+      FooterItem::RemoveLocalizationButton => (self.remove_localization_button, 8, 25),
     };
     unsafe { MoveWindow(control, x, scale(y, self.dpi), width, scale(height, self.dpi), 1) };
   }
 
-  fn action(&self, app: &mut App, id: usize, languages: &[String], locale_options: &[String]) {
+  fn action(
+    &self,
+    app: &mut App,
+    id: usize,
+    dictionary_language_options: &[String],
+    interface_language_options: &[String],
+  ) {
     match id {
-      BROWSE => self.browse(app),
-      LANGUAGE => {
-        if let Some(language) = combo_value(self.languages, languages) {
+      BROWSE_EXECUTABLE_BUTTON_ID => self.browse(app),
+      DICTIONARY_LANGUAGE_SELECTOR_ID => {
+        if let Some(language) = combo_value(self.dictionary_language_selector, dictionary_language_options) {
           app.select_language(language);
         }
       }
-      LOCALE_SELECT => {
-        if let Some(locale) = combo_value(self.locale, locale_options) {
+      INTERFACE_LANGUAGE_SELECTOR_ID => {
+        if let Some(locale) = combo_value(self.interface_language_selector, interface_language_options) {
           app.select_locale(locale);
         }
       }
-      INSTALL => app.update_data(),
-      REMOVE => {
+      INSTALL_OR_UPDATE_BUTTON_ID => app.update_data(),
+      REMOVE_LOCALIZATION_BUTTON_ID => {
         if self.warning(&t!("Delete all localization files?"), MB_YESNO | MB_DEFBUTTON2) == IDYES {
           app.confirm_localization_removal();
         }
       }
-      BUG_LINK | BUG_ICON => self.open_url(FooterLinkTarget::ReportBug.url()),
-      TRANSIFEX_LINK | TRANSIFEX_ICON => self.open_url(FooterLinkTarget::HelpWithTranslation.url()),
+      BUG_REPORT_LINK_ID | BUG_REPORT_ICON_ID => self.open_url(FooterLinkTarget::ReportBug.url()),
+      TRANSLATION_HELP_LINK_ID | TRANSLATION_HELP_ICON_ID => self.open_url(FooterLinkTarget::HelpWithTranslation.url()),
       _ => {}
     }
   }
@@ -726,22 +780,22 @@ fn set_icon(control: HWND, message: u32, resource: usize, size: i32) {
 }
 
 struct StatusRow {
-  local: HWND,
-  available: HWND,
-  icon: HWND,
-  status: HWND,
+  installed_version_label: HWND,
+  available_version_label: HWND,
+  update_status_icon: HWND,
+  update_status_label: HWND,
 }
 
 impl StatusRow {
   fn refresh(&self, value: &ComponentStatus, dpi: u32) {
-    set_text(self.local, &value.local);
-    set_text(self.available, &value.available);
+    set_text(self.installed_version_label, &value.local);
+    set_text(self.available_version_label, &value.available);
     let background = unsafe { GetSysColor(COLOR_BTNFACE) };
     let (red, green, blue) = value.status.color((background >> 8) & 0xff < 128);
     let color = u32::from(red) | (u32::from(green) << 8) | (u32::from(blue) << 16);
     unsafe {
-      SetWindowLongPtrW(self.status, GWLP_USERDATA, color as isize + 1);
-      InvalidateRect(self.status, null(), 1);
+      SetWindowLongPtrW(self.update_status_label, GWLP_USERDATA, color as isize + 1);
+      InvalidateRect(self.update_status_label, null(), 1);
     }
     let resource = match value.status {
       Status::Loading => 5,
@@ -749,8 +803,8 @@ impl StatusRow {
       Status::Current => 7,
       Status::Attention => 8,
     };
-    set_icon(self.icon, STM_SETICON, resource, scale(16, dpi));
-    set_text(self.status, &value.text);
+    set_icon(self.update_status_icon, STM_SETICON, resource, scale(16, dpi));
+    set_text(self.update_status_label, &value.text);
   }
 }
 

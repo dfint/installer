@@ -21,31 +21,31 @@ struct Window {
   window: gtk::ApplicationWindow,
   app: RefCell<App>,
   startup_warning_shown: Cell<bool>,
-  picking: Cell<bool>,
-  path_title: gtk::Label,
-  version_title: gtk::Label,
-  checksum_title: gtk::Label,
-  path: gtk::Label,
-  version: gtk::Label,
-  platform: gtk::Label,
-  linux_icon: gtk::Image,
-  windows_icon: gtk::Image,
-  checksum: gtk::Label,
-  browse: gtk::Button,
-  hook_title: gtk::Label,
-  hook_version: gtk::Label,
-  hook: StatusRow,
-  dict_title: gtk::Label,
-  dict: StatusRow,
-  languages: gtk::ComboBoxText,
-  locale: gtk::ComboBoxText,
-  language_options: RefCell<Vec<String>>,
-  install: gtk::Button,
-  remove: gtk::Button,
-  spinner: gtk::Spinner,
-  notice: gtk::Label,
-  bugs: gtk::Label,
-  translations: gtk::Label,
+  file_picker_active: Cell<bool>,
+  game_path_label: gtk::Label,
+  game_version_label: gtk::Label,
+  game_checksum_label: gtk::Label,
+  game_path_value: gtk::Label,
+  game_version_value: gtk::Label,
+  game_platform_label: gtk::Label,
+  game_linux_icon: gtk::Image,
+  game_windows_icon: gtk::Image,
+  game_checksum_value: gtk::Label,
+  browse_executable_button: gtk::Button,
+  hook_section_heading: gtk::Label,
+  hook_version_label: gtk::Label,
+  hook_status_row: StatusRow,
+  dictionary_section_heading: gtk::Label,
+  dictionary_status_row: StatusRow,
+  dictionary_language_selector: gtk::ComboBoxText,
+  interface_language_selector: gtk::ComboBoxText,
+  dictionary_language_options: RefCell<Vec<String>>,
+  install_or_update_button: gtk::Button,
+  remove_localization_button: gtk::Button,
+  operation_spinner: gtk::Spinner,
+  operation_notice_label: gtk::Label,
+  bug_report_link_label: gtk::Label,
+  translation_help_link_label: gtk::Label,
 }
 
 pub fn run() -> anyhow::Result<()> {
@@ -96,74 +96,95 @@ impl Window {
       .build();
     grid.set_vexpand(true);
     content.append(&grid);
-    let game_title = heading("Dwarf Fortress");
-    let path_title = label();
-    let version_title = label();
-    let checksum_title = label();
-    let path = label();
-    path.set_selectable(true);
-    path.set_single_line_mode(true);
-    path.set_ellipsize(gtk::pango::EllipsizeMode::Middle);
-    let version = label();
-    let platform = label();
-    let linux_icon = small_icon(include_bytes!("../assets/os-linux.png"));
-    let windows_icon = small_icon(include_bytes!("../assets/os-windows.png"));
-    let version_row = gtk::Box::new(gtk::Orientation::Horizontal, 4);
-    version_row.append(&version);
-    version_row.append(&linux_icon);
-    version_row.append(&windows_icon);
-    version_row.append(&platform);
-    let checksum = label();
-    let browse = gtk::Button::from_icon_name("system-search-symbolic");
-    browse.set_halign(gtk::Align::End);
-    let hook_title = heading("");
-    let hook_version = label();
-    let hook = StatusRow::new();
+    let game_details_heading = heading("Dwarf Fortress");
+    let game_path_label = label();
+    let game_version_label = label();
+    let game_checksum_label = label();
+    let game_path_value = label();
+    game_path_value.set_selectable(true);
+    game_path_value.set_single_line_mode(true);
+    game_path_value.set_ellipsize(gtk::pango::EllipsizeMode::Middle);
+    let game_version_value = label();
+    let game_platform_label = label();
+    let game_linux_icon = small_icon(include_bytes!("../assets/os-linux.png"));
+    let game_windows_icon = small_icon(include_bytes!("../assets/os-windows.png"));
+    let game_version_box = gtk::Box::new(gtk::Orientation::Horizontal, 4);
+    game_version_box.append(&game_version_value);
+    game_version_box.append(&game_linux_icon);
+    game_version_box.append(&game_windows_icon);
+    game_version_box.append(&game_platform_label);
+    let game_checksum_value = label();
+    let browse_executable_button = gtk::Button::from_icon_name("system-search-symbolic");
+    browse_executable_button.set_halign(gtk::Align::End);
+    let hook_section_heading = heading("");
+    let hook_version_label = label();
+    let hook_status_row = StatusRow::new();
 
-    let dict_title = heading("");
-    let languages = gtk::ComboBoxText::new();
-    languages.set_size_request(140, -1);
-    languages.set_halign(gtk::Align::Start);
-    let dict = StatusRow::new();
+    let dictionary_section_heading = heading("");
+    let dictionary_language_selector = gtk::ComboBoxText::new();
+    dictionary_language_selector.set_size_request(140, -1);
+    dictionary_language_selector.set_halign(gtk::Align::Start);
+    let dictionary_status_row = StatusRow::new();
 
-    let actions = gtk::Box::new(gtk::Orientation::Vertical, 0);
-    actions.set_halign(gtk::Align::Center);
-    actions.set_margin_top(14);
-    let install = gtk::Button::new();
-    install.set_size_request(INSTALL_WIDTH, INSTALL_HEIGHT);
-    install.add_css_class("suggested-action");
-    let spinner = gtk::Spinner::new();
-    spinner.set_size_request(24, INSTALL_HEIGHT);
-    actions.append(&install);
-    actions.append(&spinner);
+    let install_action_box = gtk::Box::new(gtk::Orientation::Vertical, 0);
+    install_action_box.set_halign(gtk::Align::Center);
+    install_action_box.set_margin_top(14);
+    let install_or_update_button = gtk::Button::new();
+    install_or_update_button.set_size_request(INSTALL_WIDTH, INSTALL_HEIGHT);
+    install_or_update_button.add_css_class("suggested-action");
+    let operation_spinner = gtk::Spinner::new();
+    operation_spinner.set_size_request(24, INSTALL_HEIGHT);
+    install_action_box.append(&install_or_update_button);
+    install_action_box.append(&operation_spinner);
 
-    let notice = label();
-    notice.set_wrap(true);
-    notice.set_halign(gtk::Align::Start);
-    notice.set_valign(gtk::Align::End);
-    notice.set_vexpand(true);
-    notice.set_margin_top(6);
+    let operation_notice_label = label();
+    operation_notice_label.set_wrap(true);
+    operation_notice_label.set_halign(gtk::Align::Start);
+    operation_notice_label.set_valign(gtk::Align::End);
+    operation_notice_label.set_vexpand(true);
+    operation_notice_label.set_margin_top(6);
     let widgets: HashMap<_, &gtk::Widget> = HashMap::from([
-      (ControlId::GameDetailsHeading, game_title.upcast_ref()),
-      (ControlId::GamePathLabel, path_title.upcast_ref()),
-      (ControlId::GamePathValue, path.upcast_ref()),
-      (ControlId::BrowseExecutable, browse.upcast_ref()),
-      (ControlId::GameVersionLabel, version_title.upcast_ref()),
-      (ControlId::GameVersionValue, version_row.upcast_ref()),
-      (ControlId::GameChecksumLabel, checksum_title.upcast_ref()),
-      (ControlId::GameChecksumValue, checksum.upcast_ref()),
-      (ControlId::HookHeading, hook_title.upcast_ref()),
-      (ControlId::HookVersionLabel, hook_version.upcast_ref()),
-      (ControlId::HookInstalledVersion, hook.local.upcast_ref()),
-      (ControlId::HookAvailableVersion, hook.available.upcast_ref()),
-      (ControlId::HookUpdateStatus, hook.status.upcast_ref()),
-      (ControlId::DictionaryHeading, dict_title.upcast_ref()),
-      (ControlId::DictionaryLanguageSelector, languages.upcast_ref()),
-      (ControlId::DictionaryInstalledVersion, dict.local.upcast_ref()),
-      (ControlId::DictionaryAvailableVersion, dict.available.upcast_ref()),
-      (ControlId::DictionaryUpdateStatus, dict.status.upcast_ref()),
-      (ControlId::InstallOrUpdate, actions.upcast_ref()),
-      (ControlId::OperationNotice, notice.upcast_ref()),
+      (ControlId::GameDetailsHeading, game_details_heading.upcast_ref()),
+      (ControlId::GamePathLabel, game_path_label.upcast_ref()),
+      (ControlId::GamePathValue, game_path_value.upcast_ref()),
+      (ControlId::BrowseExecutable, browse_executable_button.upcast_ref()),
+      (ControlId::GameVersionLabel, game_version_label.upcast_ref()),
+      (ControlId::GameVersionValue, game_version_box.upcast_ref()),
+      (ControlId::GameChecksumLabel, game_checksum_label.upcast_ref()),
+      (ControlId::GameChecksumValue, game_checksum_value.upcast_ref()),
+      (ControlId::HookHeading, hook_section_heading.upcast_ref()),
+      (ControlId::HookVersionLabel, hook_version_label.upcast_ref()),
+      (
+        ControlId::HookInstalledVersion,
+        hook_status_row.installed_version_label.upcast_ref(),
+      ),
+      (
+        ControlId::HookAvailableVersion,
+        hook_status_row.available_version_label.upcast_ref(),
+      ),
+      (
+        ControlId::HookUpdateStatus,
+        hook_status_row.update_status_label.upcast_ref(),
+      ),
+      (ControlId::DictionaryHeading, dictionary_section_heading.upcast_ref()),
+      (
+        ControlId::DictionaryLanguageSelector,
+        dictionary_language_selector.upcast_ref(),
+      ),
+      (
+        ControlId::DictionaryInstalledVersion,
+        dictionary_status_row.installed_version_label.upcast_ref(),
+      ),
+      (
+        ControlId::DictionaryAvailableVersion,
+        dictionary_status_row.available_version_label.upcast_ref(),
+      ),
+      (
+        ControlId::DictionaryUpdateStatus,
+        dictionary_status_row.update_status_label.upcast_ref(),
+      ),
+      (ControlId::InstallOrUpdate, install_action_box.upcast_ref()),
+      (ControlId::OperationNotice, operation_notice_label.upcast_ref()),
     ]);
     let mut row = 0;
     for item in INSTALLER_LAYOUT.content_rows() {
@@ -194,34 +215,40 @@ impl Window {
     footer.set_margin_end(8);
     footer.set_margin_top(4);
     footer.set_margin_bottom(4);
-    let (bug_link, bugs) = footer_link(
+    let (bug_report_link, bug_report_link_label) = footer_link(
       FooterLinkTarget::ReportBug.url(),
       include_bytes!("../assets/github.png"),
     );
-    let (translation_link, translations) = footer_link(
+    let (translation_help_link, translation_help_link_label) = footer_link(
       FooterLinkTarget::HelpWithTranslation.url(),
       include_bytes!("../assets/transifex.png"),
     );
-    let locale = gtk::ComboBoxText::new();
+    let interface_language_selector = gtk::ComboBoxText::new();
     for item in locales(&LOCALE.read().current_locale()) {
-      locale.append(Some(&item), &item);
+      interface_language_selector.append(Some(&item), &item);
     }
-    let build = gtk::Label::new(Some(&format!("v{VERSION}")));
-    build.add_css_class("dim-label");
-    build.set_xalign(0.0);
-    let remove = gtk::Button::from_icon_name("user-trash-symbolic");
+    let installer_version_label = gtk::Label::new(Some(&format!("v{VERSION}")));
+    installer_version_label.add_css_class("dim-label");
+    installer_version_label.set_xalign(0.0);
+    let remove_localization_button = gtk::Button::from_icon_name("user-trash-symbolic");
     let footer_widgets: HashMap<_, &gtk::Widget> = HashMap::from([
       (
         FooterItem::ExternalLink(FooterLinkTarget::ReportBug),
-        bug_link.upcast_ref(),
+        bug_report_link.upcast_ref(),
       ),
       (
         FooterItem::ExternalLink(FooterLinkTarget::HelpWithTranslation),
-        translation_link.upcast_ref(),
+        translation_help_link.upcast_ref(),
       ),
-      (FooterItem::InstallerVersion, build.upcast_ref()),
-      (FooterItem::InterfaceLanguageSelector, locale.upcast_ref()),
-      (FooterItem::RemoveLocalizationButton, remove.upcast_ref()),
+      (FooterItem::InstallerVersion, installer_version_label.upcast_ref()),
+      (
+        FooterItem::InterfaceLanguageSelector,
+        interface_language_selector.upcast_ref(),
+      ),
+      (
+        FooterItem::RemoveLocalizationButton,
+        remove_localization_button.upcast_ref(),
+      ),
     ]);
     let append = |item| footer.append(footer_widgets[&item]);
     INSTALLER_LAYOUT
@@ -244,32 +271,32 @@ impl Window {
     let ui = Rc::new(Self {
       window,
       app: RefCell::new(App::default()),
-      path_title,
-      version_title,
-      checksum_title,
-      path,
-      version,
-      platform,
-      linux_icon,
-      windows_icon,
-      checksum,
+      game_path_label,
+      game_version_label,
+      game_checksum_label,
+      game_path_value,
+      game_version_value,
+      game_platform_label,
+      game_linux_icon,
+      game_windows_icon,
+      game_checksum_value,
       startup_warning_shown: Cell::default(),
-      picking: Cell::default(),
-      browse,
-      hook_title,
-      hook_version,
-      hook,
-      dict_title,
-      dict,
-      languages,
-      locale,
-      language_options: RefCell::default(),
-      install,
-      remove,
-      spinner,
-      notice,
-      bugs,
-      translations,
+      file_picker_active: Cell::default(),
+      browse_executable_button,
+      hook_section_heading,
+      hook_version_label,
+      hook_status_row,
+      dictionary_section_heading,
+      dictionary_status_row,
+      dictionary_language_selector,
+      interface_language_selector,
+      dictionary_language_options: RefCell::default(),
+      install_or_update_button,
+      remove_localization_button,
+      operation_spinner,
+      operation_notice_label,
+      bug_report_link_label,
+      translation_help_link_label,
     });
     ui.connect();
     ui
@@ -277,48 +304,52 @@ impl Window {
 
   fn connect(self: &Rc<Self>) {
     let weak = Rc::downgrade(self);
-    self.browse.connect_clicked(move |_| {
+    self.browse_executable_button.connect_clicked(move |_| {
       if let Some(ui) = weak.upgrade() {
         ui.pick_file();
       }
     });
     let weak = Rc::downgrade(self);
-    self.install.connect_clicked(move |_| {
+    self.install_or_update_button.connect_clicked(move |_| {
       if let Some(ui) = weak.upgrade() {
         ui.app.borrow_mut().update_data();
         ui.refresh();
       }
     });
     let weak = Rc::downgrade(self);
-    self.remove.connect_clicked(move |_| {
+    self.remove_localization_button.connect_clicked(move |_| {
       if let Some(ui) = weak.upgrade() {
         ui.confirm(&t!("Delete all localization files?"), App::confirm_localization_removal);
       }
     });
     let weak = Rc::downgrade(self);
-    self.languages.connect_changed(move |combo| {
-      if let Some(ui) = weak.upgrade()
-        && let Some(id) = combo.active_id()
-      {
+    self
+      .dictionary_language_selector
+      .connect_changed(move |combo| {
+        if let Some(ui) = weak.upgrade()
+          && let Some(id) = combo.active_id()
         {
-          let Ok(mut app) = ui.app.try_borrow_mut() else { return };
-          app.select_language(id.to_string());
+          {
+            let Ok(mut app) = ui.app.try_borrow_mut() else { return };
+            app.select_language(id.to_string());
+          }
+          ui.refresh();
         }
-        ui.refresh();
-      }
-    });
+      });
     let weak = Rc::downgrade(self);
-    self.locale.connect_changed(move |combo| {
-      if let Some(ui) = weak.upgrade()
-        && let Some(id) = combo.active_id()
-      {
+    self
+      .interface_language_selector
+      .connect_changed(move |combo| {
+        if let Some(ui) = weak.upgrade()
+          && let Some(id) = combo.active_id()
         {
-          let Ok(mut app) = ui.app.try_borrow_mut() else { return };
-          app.select_locale(id.to_string());
+          {
+            let Ok(mut app) = ui.app.try_borrow_mut() else { return };
+            app.select_locale(id.to_string());
+          }
+          ui.refresh();
         }
-        ui.refresh();
-      }
-    });
+      });
     let weak = Rc::downgrade(self);
     self.window.connect_close_request(move |_| {
       if let Some(ui) = weak.upgrade() {
@@ -331,56 +362,70 @@ impl Window {
   fn refresh(&self) {
     let app = self.app.borrow();
     let view = app.view();
-    self.path_title.set_text(&t!("Path"));
-    self.version_title.set_text(&t!("Version"));
-    self.checksum_title.set_text(&t!("Checksum"));
-    self.path.set_text(&view.path);
-    self.path.set_tooltip_text(Some(&view.path));
-    self.version.set_text(&view.version);
+    self.game_path_label.set_text(&t!("Path"));
+    self.game_version_label.set_text(&t!("Version"));
+    self.game_checksum_label.set_text(&t!("Checksum"));
+    self.game_path_value.set_text(&view.path);
+    self.game_path_value.set_tooltip_text(Some(&view.path));
+    self.game_version_value.set_text(&view.version);
     self
-      .linux_icon
+      .game_linux_icon
       .set_visible(app.bin.valid && view.platform == OS::Linux);
     self
-      .windows_icon
+      .game_windows_icon
       .set_visible(app.bin.valid && view.platform == OS::Windows);
     self
-      .platform
+      .game_platform_label
       .set_text(&format!("{} | {}", view.platform, view.distribution));
-    self.checksum.set_text(&view.checksum);
-    label_icon_button(&self.browse, &t!("Open Dwarf Fortress executable"));
-    self.browse.set_sensitive(view.ready && !view.busy);
-    set_heading(&self.hook_title, &t!("Hook"));
-    self.hook_version.set_text(&t!("Version"));
-    self.hook.refresh(&view.hook);
-    set_heading(&self.dict_title, &t!("Dictionary"));
-    self.dict.refresh(&view.dictionary);
-    let mut options = self.language_options.borrow_mut();
+    self.game_checksum_value.set_text(&view.checksum);
+    label_icon_button(&self.browse_executable_button, &t!("Open Dwarf Fortress executable"));
+    self
+      .browse_executable_button
+      .set_sensitive(view.ready && !view.busy);
+    set_heading(&self.hook_section_heading, &t!("Hook"));
+    self.hook_version_label.set_text(&t!("Version"));
+    self.hook_status_row.refresh(&view.hook);
+    set_heading(&self.dictionary_section_heading, &t!("Dictionary"));
+    self.dictionary_status_row.refresh(&view.dictionary);
+    let mut options = self.dictionary_language_options.borrow_mut();
     if *options != view.languages {
-      self.languages.remove_all();
+      self.dictionary_language_selector.remove_all();
       for language in &view.languages {
-        self.languages.append(Some(language), language);
+        self
+          .dictionary_language_selector
+          .append(Some(language), language);
       }
       *options = view.languages;
     }
-    self.languages.set_active_id(Some(&app.selected_language));
     self
-      .languages
+      .dictionary_language_selector
+      .set_active_id(Some(&app.selected_language));
+    self
+      .dictionary_language_selector
       .set_sensitive(view.ready && !view.busy && !options.is_empty());
-    self.locale.set_active_id(Some(&app.ui_locale));
-    self.install.set_label(&view.action);
-    self.install.set_visible(view.can_update);
-    label_icon_button(&self.remove, &t!("Delete localization files"));
-    self.remove.set_visible(view.has_localization);
-    self.remove.set_sensitive(view.ready && !view.busy);
+    self
+      .interface_language_selector
+      .set_active_id(Some(&app.ui_locale));
+    self.install_or_update_button.set_label(&view.action);
+    self.install_or_update_button.set_visible(view.can_update);
+    label_icon_button(&self.remove_localization_button, &t!("Delete localization files"));
+    self
+      .remove_localization_button
+      .set_visible(view.has_localization);
+    self
+      .remove_localization_button
+      .set_sensitive(view.ready && !view.busy);
     let spinning = !app.ready() || view.busy;
-    self.spinner.set_visible(spinning);
-    self.spinner.set_spinning(spinning);
+    self.operation_spinner.set_visible(spinning);
+    self.operation_spinner.set_spinning(spinning);
     self
-      .notice
+      .operation_notice_label
       .set_text(app.notice.as_deref().unwrap_or_default());
-    self.bugs.set_text(&FooterLinkTarget::ReportBug.title());
     self
-      .translations
+      .bug_report_link_label
+      .set_text(&FooterLinkTarget::ReportBug.title());
+    self
+      .translation_help_link_label
       .set_text(&FooterLinkTarget::HelpWithTranslation.title());
   }
 
@@ -410,7 +455,7 @@ impl Window {
   }
 
   fn pick_file(self: &Rc<Self>) {
-    if self.picking.replace(true) {
+    if self.file_picker_active.replace(true) {
       return;
     }
     let dialog = gtk::FileChooserDialog::builder()
@@ -432,7 +477,7 @@ impl Window {
       let path = dialog.file().and_then(|file| file.path());
       dialog.destroy();
       if let Some(ui) = weak.upgrade() {
-        ui.picking.set(false);
+        ui.file_picker_active.set(false);
         if response == gtk::ResponseType::Accept
           && let Some(path) = path
         {
@@ -441,12 +486,12 @@ impl Window {
             ui.refresh();
             let message = ui.app.borrow().notice.clone().unwrap_or_default();
             let warning = ui.warning(&message, &[(&t!("Ok"), gtk::ResponseType::Ok)]);
-            ui.picking.set(true);
+            ui.file_picker_active.set(true);
             let weak = Rc::downgrade(&ui);
             warning.connect_response(move |warning, _| {
               warning.destroy();
               if let Some(ui) = weak.upgrade() {
-                ui.picking.set(false);
+                ui.file_picker_active.set(false);
                 ui.pick_file();
               }
             });
@@ -510,33 +555,33 @@ fn set_heading(label: &gtk::Label, text: &str) {
 }
 
 struct StatusRow {
-  local: gtk::Label,
-  available: gtk::Label,
-  status: gtk::Label,
+  installed_version_label: gtk::Label,
+  available_version_label: gtk::Label,
+  update_status_label: gtk::Label,
 }
 
 impl StatusRow {
   fn new() -> Self {
-    let local = label();
-    let available = label();
-    local.set_size_request(135, -1);
-    available.set_size_request(135, -1);
-    let status = label();
-    status.set_wrap(true);
-    status.set_hexpand(true);
+    let installed_version_label = label();
+    let available_version_label = label();
+    installed_version_label.set_size_request(135, -1);
+    available_version_label.set_size_request(135, -1);
+    let update_status_label = label();
+    update_status_label.set_wrap(true);
+    update_status_label.set_hexpand(true);
     Self {
-      local,
-      available,
-      status,
+      installed_version_label,
+      available_version_label,
+      update_status_label,
     }
   }
 
   fn refresh(&self, value: &ComponentStatus) {
-    self.local.set_text(&value.local);
-    self.available.set_text(&value.available);
-    let foreground = self.status.style_context().color();
+    self.installed_version_label.set_text(&value.local);
+    self.available_version_label.set_text(&value.available);
+    let foreground = self.update_status_label.style_context().color();
     let (r, g, b) = value.status.color(foreground.green() > 0.5);
-    self.status.set_markup(&format!(
+    self.update_status_label.set_markup(&format!(
       r##"<span foreground="#{r:02x}{g:02x}{b:02x}">{} {}</span>"##,
       value.status.symbol(),
       glib::markup_escape_text(&value.text),

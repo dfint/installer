@@ -1,7 +1,7 @@
 //! Shared window structure. Each backend supplies the native controls and spacing.
 
 use crate::{
-  constants::{URL_BUGS, URL_TRANSIFEX},
+  constants::{BUG_REPORT_URL, TRANSLATION_HELP_URL},
   localization::{LOCALE, t},
 };
 
@@ -131,8 +131,8 @@ pub enum FooterLinkTarget {
 impl FooterLinkTarget {
   pub fn url(self) -> &'static str {
     match self {
-      Self::ReportBug => URL_BUGS,
-      Self::HelpWithTranslation => URL_TRANSIFEX,
+      Self::ReportBug => BUG_REPORT_URL,
+      Self::HelpWithTranslation => TRANSLATION_HELP_URL,
     }
   }
 
